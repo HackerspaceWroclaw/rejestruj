@@ -5,6 +5,7 @@ import random
 import crypt
 import ldap
 import flask
+import smtplib
 
 #-----------------------------------------------------------------------------
 
@@ -36,10 +37,29 @@ def validate(nick, email, firstname, lastname):
 #-----------------------------------------------------------------------------
 
 def send_activation_email(config, email, token, nick):
-    # TODO: send e-mail
-    print "sending activation e-mail to %s at %s" % (nick, email)
     url = flask.url_for('confirm', token = token, _external = True)
-    print "confirmation URL: %s" % (url,)
+    email_body = flask.render_template(
+        'email.txt',
+        nick = nick, activation_link = url,
+        email_from = config['EMAIL_FROM'], email_to = email,
+    )
+    if not email_body.endswith("\n"):
+        email_body += "\n"
+
+    if config['SMTP_ENCRYPTION'] is None:
+        smtp = smtplib.SMTP(config['SMTP_HOST'], config['SMTP_PORT'])
+    elif config['SMTP_ENCRYPTION'] == "STARTTLS":
+        smtp = smtplib.SMTP(config['SMTP_HOST'], config['SMTP_PORT'])
+        smtp.starttls()
+    elif config['SMTP_ENCRYPTION'] == "SSL":
+        smtp = smtplib.SMTP_SSL(config['SMTP_HOST'], config['SMTP_PORT'])
+
+    if config['SMTP_CREDENTIALS'] is not None:
+        (user, passwd) = config['SMTP_CREDENTIALS']
+        smtp.login(user, passwd)
+
+    smtp.sendmail(config['EMAIL_FROM'], email, email_body)
+    smtp.quit()
 
 #-----------------------------------------------------------------------------
 

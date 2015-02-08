@@ -1,0 +1,13 @@
+From: Rejestrator Hackerspace Wroclaw <{{ email_from }}>
+To: {{ email_to }}
+Subject: rejestracja konta w Hackerspace Wroclaw
+
+Żeby utworzyć w Hackerspace Wrocław konto o nazwie "{{ nick }}"
+otwórz w przeglądarce ten link:
+
+    {{ activation_link }}
+
+Jeśli założenie konta nie jest Twoją intencją, zignoruj tę wiadomość.
+
+-- 
+Rejestrator Hackerspace Wrocław
