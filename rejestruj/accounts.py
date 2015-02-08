@@ -28,7 +28,7 @@ def register(config, nick, email, firstname, lastname, crypt_password):
         "crypt_password": crypt_password,
     }
     (dn, attrs) = fill(config, values)
-    print ldif(dn, attrs)
+    ldap_add(config, dn, attrs)
 
 def validate(nick, email, firstname, lastname):
     # TODO: raise RegisterError on problem
@@ -83,15 +83,6 @@ def fill(config, fill_values):
         else:
             attrs[name] = [str(value)]
     return (dn, attrs)
-
-#-----------------------------------------------------------------------------
-
-def ldif(dn, attrs):
-    body = []
-    for name in sorted(attrs):
-        for value in attrs[name]:
-            body.append("%s: %s" % (name, value))
-    return "dn: %s\n%s\n" % (dn, "\n".join(body))
 
 #-----------------------------------------------------------------------------
 
