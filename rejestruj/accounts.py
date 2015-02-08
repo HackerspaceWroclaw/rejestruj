@@ -84,7 +84,7 @@ def send_activation_email(config, email, token, nick):
         (user, passwd) = config['SMTP_CREDENTIALS']
         smtp.login(user, passwd)
 
-    smtp.sendmail(config['EMAIL_FROM'], email, email_body)
+    smtp.sendmail(config['EMAIL_FROM'], email, email_body.encode('utf-8'))
     smtp.quit()
 
 #-----------------------------------------------------------------------------
