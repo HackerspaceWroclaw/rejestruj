@@ -1,0 +1,5 @@
+uwsgi:
+  plugins: http
+  http-socket: 0.0.0.0:5003
+  static-map:
+    - /static=static

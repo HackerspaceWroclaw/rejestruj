@@ -1,0 +1,105 @@
+body {
+  font-family: sans-serif;
+  width: 80%;
+  margin: 1em auto;
+  color: #2e3436;
+}
+div#box {
+}
+div#header, div#menu, div#content, div#footer {
+  padding: 1em;
+}
+div#menu {
+  background-color: #eeeeec;
+  padding: 0.6em 0 0.6em 0;
+}
+#menu span {
+  font-weight: bold;
+  padding: 0.6em;
+}
+#menu span.current {
+  background-color: #ffffff;
+  border: 1px solid #eeeeec;
+}
+#menu a {
+  color: #000000;
+  text-decoration: none;
+}
+div#footer {
+  color: gray;
+  text-align: center;
+  font-size: small;
+}
+div#footer a {
+  color: gray;
+  text-decoration: none;
+}
+pre {
+  border: dotted black 1px;
+  background: #eeeeec;
+  font-size: small;
+  padding: 1em;
+}
+
+/*--------------------------------------------------------------------------*/
+
+table.list {
+  width: 100%;
+}
+table.list, table.list td, table.list th {
+  border: dotted 1px #999a9c;
+}
+
+form {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+input.number {
+  text-align: right;
+}
+input.cell, button.cell {
+  width: 100%;
+}
+
+div.block > div {
+  display: inline-block;
+  vertical-align: top;
+}
+
+#graph_cell {
+  text-align: center;
+  margin-bottom: 16px;
+}
+#labels {
+  text-align: left;
+}
+#values {
+  text-align: left;
+  width: 69%;
+}
+#params {
+  text-align: left;
+  width: 30%;
+}
+
+/*--------------------------------------------------------------------------*/
+
+input[type=submit], input[type=button], button {
+  border: 1px solid #999a9c;
+  background: #bfc2c6;
+}
+input[type=text], textarea, select {
+  border: 1px solid #999a9c;
+  background: #eee;
+}
+
+input.hidden {
+  width: 0px;
+  height: 0px;
+  margin: 0px;
+  padding: 0px;
+  outline: none;
+  border: 0px;
+}
+
+/*--------------------------------------------------------------------------*/
