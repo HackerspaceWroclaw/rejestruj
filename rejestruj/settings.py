@@ -21,7 +21,7 @@ EMAIL_FROM = 'noreply@hswro.org'
 SMTP_HOST = 'localhost'
 SMTP_PORT = 25
 SMTP_ENCRYPTION = None      # None | "SSL" | "STARTTLS"
-SMTP_LOGIN = None           # None | (user, password)
+SMTP_CREDENTIALS = None     # None | (user, password)
 
 #-----------------------------------------------------------------------------
 
