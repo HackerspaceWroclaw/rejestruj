@@ -39,7 +39,7 @@ def register():
         email     = flask.request.values['email']
         firstname = flask.request.values['firstname']
         lastname  = flask.request.values['lastname']
-        accounts.validate(nick = nick, email = email,
+        accounts.validate(config = app.config, nick = nick, email = email,
                           firstname = firstname, lastname = lastname)
     except accounts.RegisterError, e:
         return flask.render_template('register.html', errors = e.errors)

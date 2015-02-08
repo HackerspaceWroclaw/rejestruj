@@ -1,11 +1,18 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import re
 import random
 import crypt
 import ldap
+import ldap.filter
 import flask
 import smtplib
+
+#-----------------------------------------------------------------------------
+
+_NICK_RE = re.compile(r'^[a-zA-Z0-9_.-]+$')
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+$')
 
 #-----------------------------------------------------------------------------
 
@@ -30,9 +37,28 @@ def register(config, nick, email, firstname, lastname, crypt_password):
     (dn, attrs) = fill(config, values)
     ldap_add(config, dn, attrs)
 
-def validate(nick, email, firstname, lastname):
-    # TODO: raise RegisterError on problem
-    pass
+def validate(config, nick, email, firstname, lastname):
+    errors = {}
+    if nick in (None, ""):
+        errors["nick"] = u"nick jest pusty"
+    elif not _NICK_RE.match(nick):
+        errors["nick"] = u"niedozwolone znaki w nicku"
+    elif ldap_exists(config, nick):
+        errors["nick"] = u"użytkownik już istnieje"
+
+    if email in (None, ""):
+        errors["email"] = u"e-mail jest pusty"
+    elif not _EMAIL_RE.match(email):
+        errors["email"] = u"e-mail ma nieprawidłową formę"
+
+    if firstname in (None, ""):
+        errors["firstname"] = u"imię jest puste"
+
+    if lastname in (None, ""):
+        errors["lastname"] = u"nazwisko jest puste"
+
+    if len(errors) > 0:
+        raise RegisterError(u"błędy w formularzu", errors)
 
 #-----------------------------------------------------------------------------
 
@@ -86,18 +112,30 @@ def fill(config, fill_values):
 
 #-----------------------------------------------------------------------------
 
-def ldap_add(config, dn, attrs):
+def ldap_connect(config):
     conn = ldap.initialize(config['LDAP_URI'])
     conn.protocol_version = ldap.VERSION3
     # FIXME: catch ldap.LDAPError
     conn.bind_s(config['LDAP_BIND_DN'], config['LDAP_BIND_PW'],
                 ldap.AUTH_SIMPLE)
+    return conn
+
+def ldap_add(config, dn, attrs):
+    conn = ldap_connect(config)
     try:
         conn.add_s(dn, attrs.items())
     except ldap.ALREADY_EXISTS:
         # this typically shouldn't happen
         raise RegisterError("specified username already exists")
     conn.unbind_s()
+
+def ldap_exists(config, nick):
+    conn = ldap_connect(config)
+    user_filter = ldap.filter.filter_format('uid=%s', [nick])
+    result = conn.search_s(config['LDAP_USER_TREE'], ldap.SCOPE_SUBTREE,
+                           user_filter, attrlist = ['uid'])
+    conn.unbind_s()
+    return (len(result) > 0)
 
 #-----------------------------------------------------------------------------
 

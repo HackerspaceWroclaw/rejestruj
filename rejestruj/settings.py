@@ -34,6 +34,7 @@ LDAP_URI = "ldapi:///"
 LDAP_BIND_DN = "cn=root,dc=hswro.org"
 LDAP_BIND_PW = "<some password>"
 
+LDAP_USER_TREE = "dc=hswro.org"
 LDAP_USER_DN_TEMPLATE = "uid=%(nick)s,ou=HS members,dc=hswro.org"
 LDAP_USER_TEMPLATE = {
     "uid": "%(nick)s",
