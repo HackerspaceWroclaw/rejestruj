@@ -12,6 +12,9 @@ APP_ROOT = os.path.dirname(os.path.dirname(__file__))
 
 SECRET_KEY_FILE = 'secret.txt'
 
+# SQLite3
+DATABASE_FILE = 'db/rejestruj.db'
+
 LDAP_URI = "ldapi:///"
 LDAP_BIND_DN = "cn=root,dc=hswro.org"
 LDAP_BIND_PW = "<some password>"
@@ -33,6 +36,8 @@ DEBUG = True
 
 SECRET_KEY_FILE_ABS = os.path.join(APP_ROOT, SECRET_KEY_FILE)
 SECRET_KEY = open(SECRET_KEY_FILE_ABS).readline().strip()
+
+DATABASE_FILE_ABS = os.path.join(APP_ROOT, DATABASE_FILE)
 
 #-----------------------------------------------------------------------------
 # vim:ft=python

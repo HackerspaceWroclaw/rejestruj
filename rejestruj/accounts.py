@@ -4,6 +4,7 @@ import re
 import random
 import crypt
 import ldap
+import flask
 
 #-----------------------------------------------------------------------------
 
@@ -17,15 +18,13 @@ class RegisterError(Exception):
 
 #-----------------------------------------------------------------------------
 
-def register(config, nick, email, firstname, lastname, password):
-    validate(nick, email, firstname, lastname)
+def register(config, nick, email, firstname, lastname, crypt_password):
     values = {
         "nick":      nick,
         "email":     email,
         "firstname": firstname,
         "lastname":  lastname,
-        "password":  password,
-        "crypt_password": passwd(password),
+        "crypt_password": crypt_password,
     }
     (dn, attrs) = fill(config, values)
     print ldif(dn, attrs)
@@ -33,6 +32,14 @@ def register(config, nick, email, firstname, lastname, password):
 def validate(nick, email, firstname, lastname):
     # TODO: raise RegisterError on problem
     pass
+
+#-----------------------------------------------------------------------------
+
+def send_activation_email(config, email, token, nick):
+    # TODO: send e-mail
+    print "sending activation e-mail to %s at %s" % (nick, email)
+    url = flask.url_for('confirm', token = token, _external = True)
+    print "confirmation URL: %s" % (url,)
 
 #-----------------------------------------------------------------------------
 
@@ -74,11 +81,11 @@ def ldap_add(config, dn, attrs):
     # FIXME: catch ldap.LDAPError
     conn.bind_s(config['LDAP_BIND_DN'], config['LDAP_BIND_PW'],
                 ldap.AUTH_SIMPLE)
-    # FIXME: catch ldap.ALREADY_EXISTS
     try:
         conn.add_s(dn, attrs.items())
     except ldap.ALREADY_EXISTS:
-        raise RegisterError(
+        # this typically shouldn't happen
+        raise RegisterError("specified username already exists")
     conn.unbind_s()
 
 #-----------------------------------------------------------------------------

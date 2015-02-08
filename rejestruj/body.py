@@ -4,6 +4,9 @@
 import flask
 import rejestruj.settings
 import accounts
+import db
+import os
+import base64
 
 #-----------------------------------------------------------------------------
 
@@ -22,31 +25,71 @@ def register_form():
 
 @app.route("/register", methods = ["POST"])
 def register():
-    passwd = flask.request.values.get('password')
-    passwd2 = flask.request.values.get('password_repeated')
+    password = flask.request.values.get('password')
+    password2 = flask.request.values.get('password_repeated')
 
-    if passwd in ["", None] or passwd != passwd2:
+    if password in ["", None] or password != password2:
         errors = {
             "password": "hasła się nie zgadzają",
         }
         return flask.render_template('register.html', errors = errors)
 
     try:
-        accounts.register(
-            config = app.config,
-            nick      = flask.request.values['nick'],
-            email     = flask.request.values['email'],
-            firstname = flask.request.values['firstname'],
-            lastname  = flask.request.values['lastname'],
-            password  = flask.request.values['password'],
-        )
+        nick      = flask.request.values['nick']
+        email     = flask.request.values['email']
+        firstname = flask.request.values['firstname']
+        lastname  = flask.request.values['lastname']
+        accounts.validate(nick = nick, email = email,
+                          firstname = firstname, lastname = lastname)
     except accounts.RegisterError, e:
         return flask.render_template('register.html', errors = e.errors)
 
+    dbconn = db.connection(app.config)
+    token = generate_token(app.config)
+    accounts.send_activation_email(app.config, email, token, nick)
+    db.save_form(
+        dbconn = dbconn,
+        token  = token,
+        nick      = nick,
+        email     = email,
+        firstname = firstname,
+        lastname  = lastname,
+        password  = password,
+    )
+
     title = u"Zarejestrowano"
     message = u"E-mail aktywacyjny został wysłany."
-    return flask.render_template('confirm.html',
-                                 message = message, title = title)
+    return flask.render_template('confirm.html', message = message,
+                                 title = title)
+
+#-----------------------------------------------------------------------------
+
+@app.route("/confirm/<path:token>")
+def confirm(token):
+    dbconn = db.connection(app.config)
+    form_data = db.load_form(dbconn, token)
+    if form_data is None:
+        title = u"Rejestracja nieudana"
+        message = u"Nieprawidłowy link aktywacyjny."
+        return flask.render_template('confirm.html', message = message,
+                                     title = title, error = True)
+
+    (nick, email, firstname, lastname, crypt_password) = form_data
+
+    accounts.register(
+        config = app.config, nick = nick, email = email,
+        crypt_password = crypt_password,
+        firstname = firstname, lastname = lastname,
+    )
+    title = u"Zarejestrowano"
+    message = u"Użytkownik utworzony."
+    return flask.render_template('confirm.html', message = message,
+                                 title = title)
+
+#-----------------------------------------------------------------------------
+
+def generate_token(config):
+    return base64.b64encode(os.urandom(30))
 
 #-----------------------------------------------------------------------------
 # vim:ft=python:foldmethod=marker
