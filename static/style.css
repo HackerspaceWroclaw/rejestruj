@@ -88,7 +88,7 @@ input[type=submit], input[type=button], button {
   border: 1px solid #999a9c;
   background: #bfc2c6;
 }
-input[type=text], textarea, select {
+input[type=text], input[type=password], textarea, select {
   border: 1px solid #999a9c;
   background: #eee;
 }

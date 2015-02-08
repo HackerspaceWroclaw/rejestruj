@@ -9,8 +9,7 @@ Installation
 ------------
 
 Simple WSGI application, requiring [Flask](http://flask.pocoo.org/) (0.6+;
-older versions were not checked). Python 2.6 or newer (it possibly works under
-2.5, but this was not checked).
+older versions were not checked). Python 2.6 or newer.
 
 **TODO**: be more verbose.
 
