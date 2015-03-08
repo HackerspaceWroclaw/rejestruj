@@ -8,14 +8,22 @@
 
 <h1>Panel konta</h1>
 
+<p>
+<a href="{{ url_for('logout') }}">Wyloguj</a>
+</p>
+
 <table border="1">
   <tr>
+    <th><i>DN</i></th>
+    <td>{{ account.dn }}</td>
+  </tr>
+  <tr>
     <th>zmień imię/nazwisko</th>
-    <td></td>
+    <td>{{ account.full_name }}</td>
   </tr>
   <tr>
     <th>zmień e-mail kontaktowy</th>
-    <td></td>
+    <td>{{ account.email }}</td>
   </tr>
   <tr>
     <th>zmień hasło</th>
@@ -30,10 +38,6 @@
         <li>HS:Wro members (members only)</li>
       </ul>
     </td>
-  </tr>
-  <tr>
-    <th></th>
-    <td></td>
   </tr>
 </table>
 

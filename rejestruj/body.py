@@ -18,6 +18,7 @@ app.config.from_object(rejestruj.settings)
 
 # NOTE: this must be called before app.route(), meaning @app.route(...)
 # decorator should go above @require_login
+# The drawback is that url_for() doesn't work for this name anymore.
 def require_login(view):
     def new_view(*args, **kwargs):
         session = sessions.Session(app.config)
@@ -76,27 +77,59 @@ def register():
 
 @app.route("/login", methods = ["POST"])
 def login():
-    # TODO: try logging in with LDAP, then establish a session and redirect
-    # TODO: on reset password, send confirmation e-mail and after that display
-    #   "new password" form
-    return TODO()
+    if 'reset_password' in flask.request.values:
+        # TODO: send confirmation e-mail and after that display "new password"
+        #   form
+        return TODO()
+
+    username = flask.request.values.get('nick')
+    password = flask.request.values.get('password')
+    account = accounts.ldap_authenticate(app.config, username, password)
+    if not account:
+        title = u"Błąd logowania"
+        message = u"Nieprawidłowy login lub błędne hasło."
+        return flask.render_template('message.html', message = message,
+                                     title = title)
+
+    session = sessions.Session(app.config)
+    session['dn'] = account['dn']
+    session['user'] = account['uid']
+    session['full_name'] = account['cn']
+    session['member'] = account.get('isHSWroMember', False)
+    session['verified'] = account.get('isVerified', False)
+    session['email'] = account.get('contactMail', [None])[0]
+    session.save()
+
+    response = flask.make_response(flask.redirect(flask.url_for('panel')))
+    (cookie_name, cookie_value) = session.cookie()
+    response.set_cookie(cookie_name, cookie_value)
+
+    return response
 
 @app.route("/logout")
 def logout():
-    # TODO: delete HTTP session
-    return TODO()
+    session = sessions.Session(app.config)
+    session.delete()
+    message = 'Wylogowano.'
+    title = 'Wylogowano'
+    return flask.render_template('message.html', message = message,
+                                 title = title)
 
 #-----------------------------------------------------------------------------
 
 @app.route("/panel")
+def panel(*args, **kwargs):
+    return _panel(*args, **kwargs)
+
 @require_login
-def panel():
+def _panel():
     # TODO: allow changing password
     # TODO: allow changing first/last name
     # TODO: allow changing contact e-mail
     # TODO: allow (un)subscribing to Mailman lists (NOTE: isHSWroMember)
     #return TODO()
-    return flask.render_template('panel.html')
+    session = sessions.Session(app.config)
+    return flask.render_template('panel.html', account = session)
 
 #-----------------------------------------------------------------------------
 
