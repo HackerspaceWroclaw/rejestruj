@@ -62,13 +62,8 @@ def validate(config, nick, email, firstname, lastname):
 
 #-----------------------------------------------------------------------------
 
-def send_activation_email(config, email, token, nick):
-    url = flask.url_for('confirm', token = token, _external = True)
-    email_body = flask.render_template(
-        'email_confirm.txt',
-        nick = nick, activation_link = url,
-        email_from = config['EMAIL_FROM'], email_to = email,
-    )
+def send_email(config, sender, recipient, email_template, template_values):
+    email_body = flask.render_template(email_template, **template_values)
     if not email_body.endswith("\n"):
         email_body += "\n"
 
@@ -84,8 +79,35 @@ def send_activation_email(config, email, token, nick):
         (user, passwd) = config['SMTP_CREDENTIALS']
         smtp.login(user, passwd)
 
-    smtp.sendmail(config['EMAIL_FROM'], email, email_body.encode('utf-8'))
+    smtp.sendmail(sender, recipient, email_body.encode('utf-8'))
     smtp.quit()
+
+def send_activation_email(config, email, token, nick):
+    email_template = 'email_confirm.txt'
+    values = {
+        'activation_link': flask.url_for('confirm', token = token, _external = True),
+        'nick': nick,
+        'email_from': config['EMAIL_FROM'],
+        'email_to': email,
+    }
+    send_email(config, config['EMAIL_FROM'], email, email_template, values)
+
+def send_reset_password_email(config, token, nick):
+    conn = ldap_connect(config)
+    (dn, node) = ldap_find(config, conn, nick, ['contactMail'])
+    conn.unbind_s()
+    if node is None:
+        return
+    email = node['contactMail']
+    email_template = 'email_reset_password.txt'
+    values = {
+        'confirmation_link': flask.url_for('reset_password_confirm',
+                                           token = token, _external = True),
+        'nick': nick,
+        'email_from': config['EMAIL_FROM'],
+        'email_to': email,
+    }
+    send_email(config, config['EMAIL_FROM'], email, email_template, values)
 
 #-----------------------------------------------------------------------------
 

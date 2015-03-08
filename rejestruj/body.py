@@ -216,6 +216,14 @@ def confirm(token):
     return flask.render_template('message.html', message = message,
                                  title = title, link = link)
 
+@app.route("/reset_password", methods = ["POST"])
+def reset_password(token):
+    return TODO()
+
+@app.route("/reset_password/<path:token>", methods = ["GET"])
+def reset_password_confirm(token):
+    return TODO()
+
 #-----------------------------------------------------------------------------
 
 def TODO():
