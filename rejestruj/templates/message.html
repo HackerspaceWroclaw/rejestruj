@@ -12,5 +12,11 @@
 {{ message }}
 </p>
 
+{% if link %}
+<p>
+<a href="{{ link.url }}">{{ link.description }}</a>
+</p
+{% endif %}
+
 </body>
 </html>

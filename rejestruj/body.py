@@ -88,8 +88,12 @@ def login():
     if not account:
         title = u"Błąd logowania"
         message = u"Nieprawidłowy login lub błędne hasło."
+        link = {
+            'url': flask.url_for('index'),
+            'description': u'Powrót',
+        }
         return flask.render_template('message.html', message = message,
-                                     title = title)
+                                     title = title, link = link)
 
     session = sessions.Session(app.config)
     session['dn'] = account['dn']
@@ -112,8 +116,12 @@ def logout():
     session.delete()
     message = 'Wylogowano.'
     title = 'Wylogowano'
+    link = {
+        'url': flask.url_for('index'),
+        'description': u'Zaloguj ponownie',
+    }
     return flask.render_template('message.html', message = message,
-                                 title = title)
+                                 title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
@@ -152,8 +160,12 @@ def confirm(token):
     )
     title = u"Zarejestrowano"
     message = u"Użytkownik utworzony."
+    link = {
+        'url': flask.url_for('index'),
+        'description': u'Zaloguj',
+    }
     return flask.render_template('message.html', message = message,
-                                 title = title)
+                                 title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
