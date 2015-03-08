@@ -32,6 +32,9 @@ class Session:
     def save(self):
         db.save_session(self.dbconn, self.session_id, self._content)
 
+    def delete(self):
+        db.delete_session(self.dbconn, self.session_id)
+
     def __setitem__(self, key, value):
         self._content[key] = value
 
