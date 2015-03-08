@@ -137,6 +137,48 @@ def ldap_exists(config, nick):
     conn.unbind_s()
     return (len(result) > 0)
 
+def ldap_find(config, conn, username, attrs = None):
+    if attrs is None:
+        attrs = ['uid', 'cn', 'contactMail', 'isHSWroMember', 'isVerified']
+
+    user_filter = ldap.filter.filter_format('uid=%s', [username])
+    result = conn.search_s(config['LDAP_USER_TREE'], ldap.SCOPE_SUBTREE,
+                           user_filter, attrlist = attrs)
+    if len(result) == 0:
+        return (None, None)
+    (user_dn, user_node) = result[0] # TODO: what with multiple hits?
+    # XXX: assume commonName is single-valued (which is untrue, according to
+    # LDAP schema)
+    for a in ['uid', 'cn']:
+        if a in user_node:
+            user_node[a] = user_node[a][0]
+    for a in ['isHSWroMember', 'isVerified']:
+        if a in user_node:
+            # "TRUE" | "FALSE"
+            user_node[a] = (user_node[a][0] == "TRUE")
+    user_node['dn'] = user_dn
+    return (user_dn, user_node)
+
+def ldap_authenticate(config, username, password):
+    conn = ldap_connect(config)
+    (user_dn, user_node) = ldap_find(config, conn, username)
+
+    if user_dn is None:
+        conn.unbind_s()
+        return None
+
+    try:
+        conn.bind_s(user_dn, password)
+        authenticated = True
+    except ldap.LDAPError:
+        authenticated = False
+    conn.unbind_s()
+
+    if authenticated:
+        return user_node
+    else:
+        return None
+
 #-----------------------------------------------------------------------------
 
 # MD5-style password
