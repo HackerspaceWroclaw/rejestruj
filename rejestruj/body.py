@@ -4,6 +4,7 @@
 import flask
 import rejestruj.settings
 import accounts
+import sessions
 import db
 import os
 import base64
