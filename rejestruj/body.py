@@ -131,13 +131,62 @@ def panel(*args, **kwargs):
 
 @require_login
 def _panel():
-    # TODO: allow changing password
-    # TODO: allow changing first/last name
-    # TODO: allow changing contact e-mail
     # TODO: allow (un)subscribing to Mailman lists (NOTE: isHSWroMember)
-    #return TODO()
     session = sessions.Session(app.config)
     return flask.render_template('panel.html', account = session)
+
+#-----------------------------------------------------------------------------
+
+@app.route("/panel/update", methods = ["GET"])
+def _account_update_stale():
+    return flask.redirect(flask.url_for('panel'))
+
+@app.route("/panel/update", methods = ["POST"])
+def account_update(*args, **kwargs):
+    return _account_update(*args, **kwargs)
+
+@require_login
+def _account_update():
+    session = sessions.Session(app.config)
+
+    # NOTE: ldap_update() calls in this manner would be highly ineffective,
+    # but fortunately HTML forms send these fields one at a request, so it's
+    # generally OK
+
+    if flask.request.values.get("full_name", "") != "":
+        accounts.ldap_update(
+            app.config, session['dn'],
+            cn = flask.request.values['full_name'],
+        )
+        session['full_name'] = flask.request.values['full_name']
+
+    if flask.request.values.get("email", "") != "":
+        accounts.ldap_update(
+            app.config, session['dn'],
+            contactMail = flask.request.values['email'],
+        )
+        session['email'] = flask.request.values['email']
+
+    if flask.request.values.get("password", "") != "" and \
+       flask.request.values.get("password_repeated", ""):
+        if flask.request.values['password'] != flask.request.values['password_repeated']:
+            message = u'Hasła się nie zgadzają.'
+            title = u'Błąd ustawiania hasła'
+            link = {
+                'url': flask.url_for('panel'),
+                'description': u'Powrót',
+            }
+            return flask.render_template('message.html', message = message,
+                                         title = title, link = link)
+        accounts.ldap_set_password(
+            app.config, session['dn'],
+            flask.request.values['password'],
+        )
+
+    session.save()
+
+    # TODO: some message maybe?
+    return flask.redirect(flask.url_for('panel'))
 
 #-----------------------------------------------------------------------------
 

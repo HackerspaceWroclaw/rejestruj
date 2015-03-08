@@ -137,6 +137,21 @@ def ldap_exists(config, nick):
     conn.unbind_s()
     return (len(result) > 0)
 
+def ldap_update(config, dn, **attrs):
+    conn = ldap_connect(config)
+    operations = [
+        (ldap.MOD_REPLACE, name, [make_str(attrs[name])])
+        for name in attrs
+    ]
+    conn.modify_s(dn, operations)
+    conn.unbind_s()
+
+def ldap_set_password(config, dn, new_password):
+    # TODO: better way of changing passwords (e.g. not hardcoded to
+    # userPassword attribute and CRYPT hash)
+    password_field = "{CRYPT}%s" % (passwd(new_password),)
+    ldap_update(config, dn, userPassword = password_field)
+
 def ldap_find(config, conn, username, attrs = None):
     if attrs is None:
         attrs = ['uid', 'cn', 'contactMail', 'isHSWroMember', 'isVerified']

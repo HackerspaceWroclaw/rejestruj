@@ -15,19 +15,44 @@
 <table border="1">
   <tr>
     <th><i>DN</i></th>
-    <td>{{ account.dn }}</td>
+    <td><tt>{{ account.dn }}</tt></td>
   </tr>
   <tr>
-    <th>zmień imię/nazwisko</th>
-    <td>{{ account.full_name }}</td>
+    <th><label for="full_name">imię/nazwisko</label></th>
+    <td>
+      <form method="post" action="{{ url_for('account_update') }}">
+        <input type="text" size="20" name="full_name" id="full_name" value="{{ account.full_name }}" />
+        <input type="submit" name="save" value="zmień" />
+      </form>
+    </td>
   </tr>
   <tr>
-    <th>zmień e-mail kontaktowy</th>
-    <td>{{ account.email }}</td>
+    <th><label for="email">e-mail kontaktowy</label></th>
+    <td>
+      <form method="post" action="{{ url_for('account_update') }}">
+        <input type="text" size="20" name="email" id="email" value="{{ account.email }}" />
+        <input type="submit" name="save" value="zmień" />
+      </form>
+    </td>
   </tr>
   <tr>
-    <th>zmień hasło</th>
-    <td></td>
+    <th><label for="password">hasło</label></th>
+    <td>
+      <form method="post" action="{{ url_for('account_update') }}">
+        <!-- TODO: replace this table with some div -->
+        <table>
+          <tr>
+            <td>
+              <input style="display: block" type="password" size="20" name="password" id="password" />
+              <input style="display: block" type="password" size="20" name="password_repeated" />
+            </td>
+            <td>
+              <input type="submit" name="save" value="zmień" />
+            </td>
+          </tr>
+        </table>
+      </form>
+    </td>
   </tr>
   <tr>
     <th>subskrybuj</th>
