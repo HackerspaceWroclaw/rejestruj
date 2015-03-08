@@ -55,6 +55,31 @@ def load_form(dbconn, token):
 
 #-----------------------------------------------------------------------------
 
+def save_reset_password_token(dbconn, token, nick):
+    cursor = dbconn.cursor()
+    cursor.execute("DELETE FROM password_reset WHERE nick = ?", (nick,))
+    cursor.execute("INSERT INTO password_reset (nick, token) VALUES (?, ?)",
+                   (nick, token))
+    cursor.close()
+    dbconn.commit()
+
+def load_reset_password_token(dbconn, token):
+    cursor = dbconn.cursor()
+    cursor.execute("SELECT nick FROM password_reset WHERE token = ?", (token,))
+    result = cursor.fetchone()
+    cursor.close()
+    if result is None:
+        return None
+    return result[0] # return nick
+
+def delete_reset_password_token(dbconn, token):
+    cursor = dbconn.cursor()
+    cursor.execute("DELETE FROM password_reset WHERE token = ?", (token,))
+    cursor.close()
+    dbconn.commit()
+
+#-----------------------------------------------------------------------------
+
 def save_session(dbconn, session_id, variables):
     access_time = time.time()
     session_data = json.dumps(variables, sort_keys = True)
@@ -117,6 +142,14 @@ def create_tables(dbconn):
                 firstname TEXT,
                 lastname  TEXT,
                 crypt_password TEXT
+            )
+        """)
+
+    if not has_table(dbconn, "password_reset"):
+        dbconn.cursor().execute("""
+            CREATE TABLE password_reset (
+                nick TEXT PRIMARY KEY,
+                token TEXT
             )
         """)
 

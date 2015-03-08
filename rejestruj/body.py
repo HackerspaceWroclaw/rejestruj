@@ -78,9 +78,21 @@ def register():
 @app.route("/login", methods = ["POST"])
 def login():
     if 'reset_password' in flask.request.values:
-        # TODO: send confirmation e-mail and after that display "new password"
-        #   form
-        return TODO()
+        nick = flask.request.values['nick']
+        token = generate_token(app.config)
+        accounts.send_reset_password_email(app.config, token, nick)
+
+        dbconn = db.connection(app.config)
+        db.save_reset_password_token(dbconn, token, nick)
+
+        title = u"Resetowanie hasła"
+        message = u"E-mail dla resetowania hasła został wysłany."
+        link = {
+            'url': flask.url_for('index'),
+            'description': u'Powrót do logowania',
+        }
+        return flask.render_template('message.html', message = message,
+                                     title = title)
 
     username = flask.request.values.get('nick')
     password = flask.request.values.get('password')
@@ -168,7 +180,7 @@ def _account_update():
         session['email'] = flask.request.values['email']
 
     if flask.request.values.get("password", "") != "" and \
-       flask.request.values.get("password_repeated", ""):
+       flask.request.values.get("password_repeated", "") != "":
         if flask.request.values['password'] != flask.request.values['password_repeated']:
             message = u'Hasła się nie zgadzają.'
             title = u'Błąd ustawiania hasła'
@@ -216,13 +228,51 @@ def confirm(token):
     return flask.render_template('message.html', message = message,
                                  title = title, link = link)
 
-@app.route("/reset_password", methods = ["POST"])
-def reset_password(token):
-    return TODO()
+#-----------------------------------------------------------------------------
 
-@app.route("/reset_password/<path:token>", methods = ["GET"])
-def reset_password_confirm(token):
-    return TODO()
+@app.route("/reset_password/<path:token>", methods = ["GET", "POST"])
+def reset_password(token):
+    dbconn = db.connection(app.config)
+    nick = db.load_reset_password_token(dbconn, token)
+    if nick is None:
+        title = u"Resetowanie hasła nieudane"
+        message = u"Nieprawidłowy link do resetowania hasła."
+        return flask.render_template('message.html', message = message,
+                                     title = title)
+
+    if flask.request.method == "POST" and \
+       flask.request.values.get("password", "") != "" and \
+       flask.request.values.get("password_repeated", "") != "":
+        if flask.request.values["password"] != flask.request.values["password_repeated"]:
+            message = u"Hasła się nie zgadzają"
+            return flask.render_template('reset_password.html', nick = nick,
+                                         token = token, message = message)
+        conn = accounts.ldap_connect(app.config)
+        (user_dn, _user_attrs) = accounts.ldap_find(app.config, conn, nick)
+        conn.unbind_s()
+        if user_dn is None:
+            title = u"Resetowanie hasła nieudane"
+            message = u"Użytkownik %s nie istnieje." % (nick,)
+            return flask.render_template('message.html', message = message,
+                                         title = title)
+
+        accounts.ldap_set_password(
+            app.config, user_dn,
+            flask.request.values['password'],
+        )
+
+        title = u"Resetowanie hasła udane"
+        message = u"Hasło zresetowane."
+        link = {
+            'url': flask.url_for('index'),
+            'description': u'Zaloguj',
+        }
+        db.delete_reset_password_token(dbconn, token)
+        return flask.render_template('message.html', message = message,
+                                     title = title, link = link)
+
+    return flask.render_template('reset_password.html', nick = nick,
+                                 token = token)
 
 #-----------------------------------------------------------------------------
 

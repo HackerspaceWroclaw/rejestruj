@@ -101,8 +101,7 @@ def send_reset_password_email(config, token, nick):
     email = node['contactMail']
     email_template = 'email_reset_password.txt'
     values = {
-        'confirmation_link': flask.url_for('reset_password_confirm',
-                                           token = token, _external = True),
+        'confirmation_link': flask.url_for('reset_password', token = token, _external = True),
         'nick': nick,
         'email_from': config['EMAIL_FROM'],
         'email_to': email,
