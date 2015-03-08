@@ -6,7 +6,56 @@
 </head>
 <body>
 
-<h1>TODO</h1>
+<table border="1">
+  <tr>
+    <th>zarejestruj się</th>
+    <th>zaloguj się</th>
+    <th>zresetuj hasło</th>
+  </tr>
+  <tr>
+    <td>
+      <form method="post" action="{{ url_for('register') }}">
+        <table>
+          <tr>
+            <th><label for="reg-nick">nick</label></th>
+            <td><input type="text" size="20" name="nick" id="reg-nick" /></td>
+          </tr>
+          <tr>
+            <th><label for="reg-email">e-mail</label></th>
+            <td><input type="text" size="20" name="email" id="reg-email" /></td>
+          </tr>
+          <tr>
+            <th><label for="reg-firstname">imię</label></th>
+            <td><input type="text" size="20" name="firstname" id="reg-firstname" /></td>
+          </tr>
+          <tr>
+            <th><label for="reg-lastname">nazwisko</label></th>
+            <td><input type="text" size="20" name="lastname" id="reg-lastname" /></td>
+          </tr>
+          <tr>
+            <th rowspan="2" style="vertical-align: top">
+              <label for="reg-password">hasło</label>
+            </th>
+            <td><input type="password" size="20" name="password" id="reg-password" /></td>
+          </tr>
+          <tr>
+            <td><input type="password" size="20" name="password_repeated" /></td>
+          </tr>
+          <tr>
+            <th></th>
+            <td style="text-align: center">
+              <input type="submit" name="submit" value="Rejestruj" />
+            </td>
+          </tr>
+        </table>
+      </form>
+    </td>
+    <td>
+    </td>
+    <td>
+    </td>
+  </tr>
+</table>
 
 </body>
 </html>

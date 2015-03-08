@@ -19,10 +19,6 @@ app.config.from_object(rejestruj.settings)
 def index():
     return flask.render_template('index.html')
 
-@app.route("/register", methods = ["GET"])
-def register_form():
-    return flask.render_template('register.html')
-
 @app.route("/register", methods = ["POST"])
 def register():
     password = flask.request.values.get('password')
