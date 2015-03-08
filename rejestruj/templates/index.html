@@ -10,7 +10,6 @@
   <tr>
     <th>zarejestruj się</th>
     <th>zaloguj się</th>
-    <th>zresetuj hasło</th>
   </tr>
   <tr>
     <td>
@@ -51,8 +50,25 @@
       </form>
     </td>
     <td>
-    </td>
-    <td>
+      <form method="post" action="{{ url_for('login') }}">
+        <table>
+          <tr>
+            <th><label for="login-nick">nick</label></th>
+            <td><input type="text" size="22" name="nick" id="login-nick" /></td>
+          </tr>
+          <tr>
+            <th><label for="login-password">hasło</label></th>
+            <td><input type="password" size="22" name="password" id="login-password" /></td>
+          </tr>
+          <tr>
+            <th></th>
+            <td style="text-align: center">
+              <input type="submit" name="submit" value="Zaloguj się" />
+              <input type="submit" name="reset_password" value="Resetuj hasło" />
+            </td>
+          </tr>
+        </table>
+      </form>
     </td>
   </tr>
 </table>

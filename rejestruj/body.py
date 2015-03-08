@@ -60,6 +60,31 @@ def register():
 
 #-----------------------------------------------------------------------------
 
+@app.route("/login", methods = ["POST"])
+def login():
+    # TODO: try logging in with LDAP, then establish a session and redirect
+    # TODO: on reset password, send confirmation e-mail and after that display
+    #   "new password" form
+    return TODO()
+
+@app.route("/logout")
+def logout():
+    # TODO: delete HTTP session
+    return TODO()
+
+#-----------------------------------------------------------------------------
+
+@app.route("/panel")
+def panel():
+    # TODO: allow changing password
+    # TODO: allow changing first/last name
+    # TODO: allow changing contact e-mail
+    # TODO: allow (un)subscribing to Mailman lists (NOTE: isHSWroMember)
+    #return TODO()
+    return flask.render_template('panel.html')
+
+#-----------------------------------------------------------------------------
+
 @app.route("/confirm/<path:token>")
 def confirm(token):
     dbconn = db.connection(app.config)
@@ -83,6 +108,12 @@ def confirm(token):
                                  title = title)
 
 #-----------------------------------------------------------------------------
+
+def TODO():
+    message = u'Ta strona jeszcze nie jest zrobiona.'
+    title = u'TODO'
+    return flask.render_template('message.html', message = message,
+                                 title = title, error = True)
 
 def generate_token(config):
     return base64.b64encode(os.urandom(30))
