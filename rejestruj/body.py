@@ -16,6 +16,19 @@ app.config.from_object(rejestruj.settings)
 
 #-----------------------------------------------------------------------------
 
+# NOTE: this must be called before app.route(), meaning @app.route(...)
+# decorator should go above @require_login
+def require_login(view):
+    def new_view(*args, **kwargs):
+        session = sessions.Session(app.config)
+        if session['user'] is None:
+            return flask.redirect(flask.url_for('index'))
+        else:
+            return view(*args, **kwargs)
+    return new_view
+
+#-----------------------------------------------------------------------------
+
 @app.route("/")
 def index():
     return flask.render_template('index.html')
@@ -76,6 +89,7 @@ def logout():
 #-----------------------------------------------------------------------------
 
 @app.route("/panel")
+@require_login
 def panel():
     # TODO: allow changing password
     # TODO: allow changing first/last name
