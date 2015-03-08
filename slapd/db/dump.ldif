@@ -1,0 +1,36 @@
+dn: dc=hswro.org
+dc: hswro.org
+objectClass: top
+objectClass: domain
+
+dn: ou=users,dc=hswro.org
+ou: users
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=HS members,dc=hswro.org
+ou: HS members
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=aliases,dc=hswro.org
+ou: aliases
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=services,dc=hswro.org
+ou: services
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=groups,dc=hswro.org
+ou: groups
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=dokuwiki,ou=groups,dc=hswro.org
+ou: dokuwiki
+objectClass: top
+objectClass: organizationalUnit
+description: groups for DokuWiki
+

@@ -1,0 +1,59 @@
+#-----------------------------------------------------------------------------
+#
+# 1.3.6.1.4.0 (iso.org.dod.internet.private.reserved) tree is a namespace
+# reserved for private use within organizations
+#
+#-----------------------------------------------------------------------------
+
+# NOTE: this attribute must not derive from 'mail', but must have the same
+# syntax and structure (for "mail=foo@example.com" not to match on destMail)
+attributetype ( 1.3.6.1.4.0.1.0 NAME 'destMail'
+  DESC 'Destination e-mail for an alias'
+  EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreIA5SubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+
+# XXX: should this be a subclass of destMail or mail?
+#   * it's more of a destMail than mail
+#   * should we need contactMail and destMail to be different?
+attributetype ( 1.3.6.1.4.0.1.1 NAME 'contactMail'
+  DESC 'Contact e-mail for a person'
+  EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreIA5SubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26{256} )
+
+# "TRUE" if member of HSWro, "FALSE" or no value if user is a guest
+attributetype ( 1.3.6.1.4.0.1.2 NAME 'isHSWroMember'
+  DESC 'HSWro organization member status'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+
+# "TRUE" if verified by admin, "FALSE" or no value otherwise
+# (it may be a guest with special privileges, sort of a friend of the family)
+attributetype ( 1.3.6.1.4.0.1.3 NAME 'isVerified'
+  DESC 'Status of verification by admin'
+  EQUALITY booleanMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 SINGLE-VALUE )
+
+#-----------------------------------------------------------------------------
+
+objectclass ( 1.3.6.1.4.0.8.0 NAME 'hSWroUser'
+  DESC 'HSWro user account'
+  SUP top STRUCTURAL
+  MUST ( cn $ uid $ contactMail )
+  MAY ( sn $ mail $ destMail $ userPassword $ isHSWroMember $ isVerified ) )
+
+objectclass ( 1.3.6.1.4.0.8.1 NAME 'hSWroService'
+  DESC 'HSWro service account'
+  SUP top STRUCTURAL
+  MUST ( cn $ uid $ mail )
+  MAY ( description $ destMail $ userPassword ) )
+
+objectclass ( 1.3.6.1.4.0.8.2 NAME 'hSWroAlias'
+  DESC 'Alias entry'
+  SUP top STRUCTURAL
+  MUST ( cn $ mail $ destMail )
+  MAY ( description ) )
+
+#-----------------------------------------------------------------------------
+# vim:ft=slapd
