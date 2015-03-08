@@ -59,7 +59,7 @@ def register():
 
     title = u"Zarejestrowano"
     message = u"E-mail aktywacyjny został wysłany."
-    return flask.render_template('confirm.html', message = message,
+    return flask.render_template('message.html', message = message,
                                  title = title)
 
 #-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ def confirm(token):
     if form_data is None:
         title = u"Rejestracja nieudana"
         message = u"Nieprawidłowy link aktywacyjny."
-        return flask.render_template('confirm.html', message = message,
+        return flask.render_template('message.html', message = message,
                                      title = title, error = True)
 
     (nick, email, firstname, lastname, crypt_password) = form_data
@@ -83,7 +83,7 @@ def confirm(token):
     )
     title = u"Zarejestrowano"
     message = u"Użytkownik utworzony."
-    return flask.render_template('confirm.html', message = message,
+    return flask.render_template('message.html', message = message,
                                  title = title)
 
 #-----------------------------------------------------------------------------

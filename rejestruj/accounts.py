@@ -65,7 +65,7 @@ def validate(config, nick, email, firstname, lastname):
 def send_activation_email(config, email, token, nick):
     url = flask.url_for('confirm', token = token, _external = True)
     email_body = flask.render_template(
-        'email.txt',
+        'email_confirm.txt',
         nick = nick, activation_link = url,
         email_from = config['EMAIL_FROM'], email_to = email,
     )
