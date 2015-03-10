@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import fdb
+import fldap
+
+import os
+import base64
 import re
-import random
-import crypt
-import ldap
-import ldap.filter
-import flask
-import smtplib
+import copy
 
 #-----------------------------------------------------------------------------
 
@@ -24,209 +24,189 @@ class RegisterError(Exception):
         else:
             self.errors = errors
 
-#-----------------------------------------------------------------------------
+class UserExistsError(Exception):
+    pass
 
-def register(config, nick, email, firstname, lastname, crypt_password):
-    values = {
-        "nick":      nick,
-        "email":     email,
-        "firstname": firstname,
-        "lastname":  lastname,
-        "crypt_password": crypt_password,
-    }
-    (dn, attrs) = fill(config, values)
-    ldap_add(config, dn, attrs)
+class NoSuchUserError(Exception):
+    pass
 
-def validate(config, nick, email, firstname, lastname):
-    errors = {}
-    if nick in (None, ""):
-        errors["nick"] = u"nick jest pusty"
-    elif not _NICK_RE.match(nick):
-        errors["nick"] = u"niedozwolone znaki w nicku"
-    elif ldap_exists(config, nick):
-        errors["nick"] = u"użytkownik już istnieje"
+class AuthenticationError(Exception):
+    pass
 
-    if email in (None, ""):
-        errors["email"] = u"e-mail jest pusty"
-    elif not _EMAIL_RE.match(email):
-        errors["email"] = u"e-mail ma nieprawidłową formę"
-
-    if firstname in (None, ""):
-        errors["firstname"] = u"imię jest puste"
-
-    if lastname in (None, ""):
-        errors["lastname"] = u"nazwisko jest puste"
-
-    if len(errors) > 0:
-        raise RegisterError(u"błędy w formularzu", errors)
+class InvalidTokenError(Exception):
+    pass
 
 #-----------------------------------------------------------------------------
 
-def send_email(config, sender, recipient, email_template, template_values):
-    email_body = flask.render_template(email_template, **template_values)
-    if not email_body.endswith("\n"):
-        email_body += "\n"
-
-    if config['SMTP_ENCRYPTION'] is None:
-        smtp = smtplib.SMTP(config['SMTP_HOST'], config['SMTP_PORT'])
-    elif config['SMTP_ENCRYPTION'] == "STARTTLS":
-        smtp = smtplib.SMTP(config['SMTP_HOST'], config['SMTP_PORT'])
-        smtp.starttls()
-    elif config['SMTP_ENCRYPTION'] == "SSL":
-        smtp = smtplib.SMTP_SSL(config['SMTP_HOST'], config['SMTP_PORT'])
-
-    if config['SMTP_CREDENTIALS'] is not None:
-        (user, passwd) = config['SMTP_CREDENTIALS']
-        smtp.login(user, passwd)
-
-    smtp.sendmail(sender, recipient, email_body.encode('utf-8'))
-    smtp.quit()
-
-def send_activation_email(config, email, token, nick):
-    email_template = 'email_confirm.txt'
-    values = {
-        'activation_link': flask.url_for('confirm', token = token, _external = True),
-        'nick': nick,
-        'email_from': config['EMAIL_FROM'],
-        'email_to': email,
-    }
-    send_email(config, config['EMAIL_FROM'], email, email_template, values)
-
-def send_reset_password_email(config, token, nick):
-    conn = ldap_connect(config)
-    (dn, node) = ldap_find(config, conn, nick, ['contactMail'])
-    conn.unbind_s()
-    if node is None:
-        return
-    email = node['contactMail']
-    email_template = 'email_reset_password.txt'
-    values = {
-        'confirmation_link': flask.url_for('reset_password', token = token, _external = True),
-        'nick': nick,
-        'email_from': config['EMAIL_FROM'],
-        'email_to': email,
-    }
-    send_email(config, config['EMAIL_FROM'], email, email_template, values)
-
-#-----------------------------------------------------------------------------
-
-def make_str(value):
-    if type(value) == str:
-        return value
-    if type(value) == unicode:
-        return value.encode('utf-8')
-
-def fill(config, fill_values):
-    dn = config['LDAP_USER_DN_TEMPLATE'] % fill_values
-    attrs = {}
-    for name in config['LDAP_USER_TEMPLATE']:
-        value = config['LDAP_USER_TEMPLATE'][name]
-        if type(value) in (list, tuple):
-            attrs[name] = [make_str(v % fill_values) for v in value]
-        elif type(value) in (str, unicode):
-            attrs[name] = [make_str(value % fill_values)]
-        elif type(value) == bool:
-            attrs[name] = ["TRUE" if value else "FALSE"]
+class NewAccount:
+    def __init__(self, config, token = None):
+        self.config = config
+        self.db = fdb.DB(self.config)
+        self.token = token
+        if self.token is None:
+            # blank user for registration
+            self.nick      = None
+            self.email     = None
+            self.firstname = None
+            self.lastname  = None
+            self.password  = None
+            self.crypt_password = None
         else:
-            attrs[name] = [str(value)]
-    return (dn, attrs)
+            # load from fdb.DB for registration
+            result = self.db.load_form(self.token)
+            if result is None:
+                raise InvalidTokenError()
+            self.nick      = result[0]
+            self.email     = result[1]
+            self.firstname = result[2]
+            self.lastname  = result[3]
+            self.password  = None
+            self.crypt_password = result[4]
+
+    def store_for_activation(self):
+        self._validate() # raises RegisterError in case of error
+        if self.password is not None:
+            self.crypt_password = fldap.passwd(self.password)
+
+        token = generate_token()
+        self.db.save_form(
+            token = token,
+            nick      = self.nick,
+            email     = self.email,
+            firstname = self.firstname,
+            lastname  = self.lastname,
+            password  = self.crypt_password,
+        )
+        return token
+
+    def register(self):
+        self._validate() # again, but this should not be necessary
+        ldap = fldap.LDAP(self.config)
+        # delete forms after successful LDAP connection
+        self.db.delete_all_forms_for(self.nick)
+        try:
+            ldap.add_user(
+                nick      = self.nick,
+                email     = self.email,
+                firstname = self.firstname,
+                lastname  = self.lastname,
+                crypt_password = self.crypt_password,
+            )
+        except fldap.LDAPError:
+            # account already exists
+            raise UserExistsError()
+
+    def _validate(self):
+        # FIXME: tight coupling with registration form
+        errors = {}
+        if self.nick in (None, ""):
+            errors["nick"] = u"nick jest pusty"
+        elif not _NICK_RE.match(self.nick):
+            errors["nick"] = u"niedozwolone znaki w nicku"
+
+        if self.email in (None, ""):
+            errors["email"] = u"e-mail jest pusty"
+        elif not _EMAIL_RE.match(self.email):
+            errors["email"] = u"e-mail ma nieprawidłową formę"
+
+        if self.firstname in (None, ""):
+            errors["firstname"] = u"imię jest puste"
+
+        if self.lastname in (None, ""):
+            errors["lastname"] = u"nazwisko jest puste"
+
+        if len(errors) > 0:
+            raise RegisterError(u"błędy w formularzu", errors)
 
 #-----------------------------------------------------------------------------
 
-def ldap_connect(config):
-    conn = ldap.initialize(config['LDAP_URI'])
-    conn.protocol_version = ldap.VERSION3
-    # FIXME: catch ldap.LDAPError
-    conn.bind_s(config['LDAP_BIND_DN'], config['LDAP_BIND_PW'],
-                ldap.AUTH_SIMPLE)
-    return conn
+class Account:
+    def __init__(self, config, username = None, password = None, token = None):
+        self.config = config
+        self.ldap = fldap.LDAP(self.config)
+        self.db = None
+        self.token = token
+        #self.attrs = {...}
+        #self.old_attrs = {...}
+        #self.dn = "..."
 
-def ldap_add(config, dn, attrs):
-    conn = ldap_connect(config)
-    try:
-        conn.add_s(dn, attrs.items())
-    except ldap.ALREADY_EXISTS:
-        # this typically shouldn't happen
-        raise RegisterError("specified username already exists")
-    conn.unbind_s()
+        if self.token is not None:
+            # password reset confirmation
+            self.db = fdb.DB(self.config)
+            username = self.db.load_reset_password_token(self.token)
+            if username is None:
+                raise InvalidTokenError()
 
-def ldap_exists(config, nick):
-    conn = ldap_connect(config)
-    user_filter = ldap.filter.filter_format('uid=%s', [nick])
-    result = conn.search_s(config['LDAP_USER_TREE'], ldap.SCOPE_SUBTREE,
-                           user_filter, attrlist = ['uid'])
-    conn.unbind_s()
-    return (len(result) > 0)
+        # either simple loading user's attributes or authentication attempt
+        result = self.ldap.find(username)
+        if result is None and password is None:
+            raise NoSuchUserError()
+        if result is None and password is not None:
+            raise AuthenticationError()
 
-def ldap_update(config, dn, **attrs):
-    conn = ldap_connect(config)
-    operations = [
-        (ldap.MOD_REPLACE, name, [make_str(attrs[name])])
-        for name in attrs
-    ]
-    conn.modify_s(dn, operations)
-    conn.unbind_s()
+        self.dn = result[0]
+        self.attrs = result[1]
+        if password is not None and not self.ldap.bind(self.dn, password):
+            raise AuthenticationError()
 
-def ldap_set_password(config, dn, new_password):
-    # TODO: better way of changing passwords (e.g. not hardcoded to
-    # userPassword attribute and CRYPT hash)
-    password_field = "{CRYPT}%s" % (passwd(new_password),)
-    ldap_update(config, dn, userPassword = password_field)
+        self.old_attrs = copy.deepcopy(self.attrs)
 
-def ldap_find(config, conn, username, attrs = None):
-    if attrs is None:
-        attrs = ['uid', 'cn', 'contactMail', 'isHSWroMember', 'isVerified']
+    #-------------------------------------------------------
+    # dict-like interface {{{
 
-    user_filter = ldap.filter.filter_format('uid=%s', [username])
-    result = conn.search_s(config['LDAP_USER_TREE'], ldap.SCOPE_SUBTREE,
-                           user_filter, attrlist = attrs)
-    if len(result) == 0:
-        return (None, None)
-    (user_dn, user_node) = result[0] # TODO: what with multiple hits?
-    # XXX: assume commonName is single-valued (which is untrue, according to
-    # LDAP schema)
-    for a in ['uid', 'cn']:
-        if a in user_node:
-            user_node[a] = user_node[a][0]
-    for a in ['isHSWroMember', 'isVerified']:
-        if a in user_node:
-            # "TRUE" | "FALSE"
-            user_node[a] = (user_node[a][0] == "TRUE")
-    user_node['dn'] = user_dn
-    return (user_dn, user_node)
+    def __setitem__(self, key, value):
+        self.attrs[key] = value
 
-def ldap_authenticate(config, username, password):
-    conn = ldap_connect(config)
-    (user_dn, user_node) = ldap_find(config, conn, username)
+    def __delitem__(self, key):
+        if key in self.attrs:
+            del self.attrs[key]
 
-    if user_dn is None:
-        conn.unbind_s()
-        return None
+    def __getitem__(self, key):
+        return self.attrs.get(key)
 
-    try:
-        conn.bind_s(user_dn, password)
-        authenticated = True
-    except ldap.LDAPError:
-        authenticated = False
-    conn.unbind_s()
+    def field(self, key, default = None):
+        return self.attrs.get(key, default)
 
-    if authenticated:
-        return user_node
-    else:
-        return None
+    def __contains__(self, key):
+        return key in self.attrs
+
+    def __len__(self):
+        return len(self.attrs)
+
+    # }}}
+    #-------------------------------------------------------
+    # plan for interface {{{
+
+    def save(self):
+        changes = {}
+        for a in self.attrs:
+            if type(self.attrs[a]) == unicode:
+                self.attrs[a] = fldap.make_str(self.attrs[a])
+            if a not in self.old_attrs or self.attrs[a] != self.old_attrs[a]:
+                changes[a] = self.attrs[a]
+        self.ldap.update(dn = self['dn'], **changes)
+        # TODO: check contactMail and uid and raise RegisterError
+
+    def request_reset_password(self):
+        if self.db is None:
+            self.db = fdb.DB(self.config)
+        token = generate_token()
+        self.db.save_reset_password_token(token, self['uid'])
+        return token
+
+    def clear_reset_password_request(self):
+        self.db.delete_reset_password_token(self.token)
+
+    def set_password(self, password):
+        self.ldap.set_password(dn = self['dn'], password = password)
+
+    # }}}
+    #-------------------------------------------------------
 
 #-----------------------------------------------------------------------------
 
-# MD5-style password
-def passwd(password):
-    salt_space = "abcdefghijklmnopqrstuvwxyz" \
-                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-                 "0123456789./"
-    salt = "$1$%s$" % "".join([
-        salt_space[random.randrange(0, 64)]
-        for i in xrange(16)
-    ])
-    return crypt.crypt(password, salt)
+def generate_token():
+    return base64.b64encode(os.urandom(30))
 
 #-----------------------------------------------------------------------------
 # vim:ft=python:foldmethod=marker

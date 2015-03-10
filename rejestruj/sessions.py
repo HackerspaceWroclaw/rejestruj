@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import db
+import fdb
 import flask
 import time
 import sha
@@ -8,11 +8,8 @@ import sha
 #-----------------------------------------------------------------------------
 
 class Session:
-    def __init__(self, config, dbconn = None):
-        if dbconn is not None:
-            self.dbconn = dbconn
-        else:
-            self.dbconn = db.connection(config)
+    def __init__(self, config):
+        self.db = fdb.DB(config)
         self.session_var = config['SESSION_VARIABLE']
         self.session_id = flask.request.cookies.get(self.session_var)
         if self.session_id is None:
@@ -24,16 +21,16 @@ class Session:
                 config['SECRET_KEY'],
             )
             self.session_id = sha.sha(data).hexdigest()
-        self._content = db.load_session(self.dbconn, self.session_id)
+        self._content = self.db.load_session(self.session_id)
 
     def cookie(self):
         return (self.session_var, self.session_id)
 
     def save(self):
-        db.save_session(self.dbconn, self.session_id, self._content)
+        self.db.save_session(self.session_id, self._content)
 
     def delete(self):
-        db.delete_session(self.dbconn, self.session_id)
+        self.db.delete_session(self.session_id)
 
     def __setitem__(self, key, value):
         self._content[key] = value

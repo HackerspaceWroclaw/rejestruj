@@ -43,7 +43,7 @@ LDAP_USER_DN_TEMPLATE = "uid=%(nick)s,ou=HS members,dc=hswro.org"
 LDAP_USER_TEMPLATE = {
     "uid": "%(nick)s",
     "cn": "%(firstname)s %(lastname)s",
-    "userPassword": "{CRYPT}%(crypt_password)s",
+    "userPassword": "%(crypt_password)s",
     "contactMail": "%(email)s",
     "objectClass": ["top", "hSWroUser"],
     "isHSWroMember": False,
