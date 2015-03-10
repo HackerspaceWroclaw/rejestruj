@@ -52,6 +52,13 @@ LDAP_USER_TEMPLATE = {
 
 #-----------------------------------------------------------------------------
 
+try:
+    from settings_local import *
+except ImportError:
+    pass
+
+#-----------------------------------------------------------------------------
+
 SECRET_KEY_FILE_ABS = os.path.join(APP_ROOT, SECRET_KEY_FILE)
 SECRET_KEY = open(SECRET_KEY_FILE_ABS).readline().strip()
 
