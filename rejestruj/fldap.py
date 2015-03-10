@@ -91,7 +91,10 @@ class LDAP:
 
     def find(self, username, attrs = None):
         if attrs is None:
-            attrs = ['uid', 'cn', 'contactMail', 'isHSWroMember', 'isVerified']
+            attrs = [
+                'uid', 'cn', 'contactMail', 'mail',
+                'isHSWroMember', 'isVerified',
+            ]
 
         user_filter = ldap.filter.filter_format('uid=%s', [username])
         result = self.conn.search_s(self.user_tree, ldap.SCOPE_SUBTREE,

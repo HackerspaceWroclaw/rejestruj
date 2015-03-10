@@ -150,6 +150,7 @@ def login():
     session['member'] = account.field('isHSWroMember', False)
     session['verified'] = account.field('isVerified', False)
     session['email'] = account.field('contactMail', [None])[0]
+    session['hs_emails'] = account.field('mail', [])
     session.save()
 
     response = flask.make_response(flask.redirect(flask.url_for('panel')))

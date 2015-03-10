@@ -17,6 +17,16 @@
     <th><i>DN</i></th>
     <td><tt>{{ account.dn }}</tt></td>
   </tr>
+{% if account.hs_emails %}
+  <tr>
+    <th>e-maile</th>
+    <td>
+{%-   for e in account.hs_emails|sort %}
+      <div><tt><a href="mailto:{{ e }}">{{ e }}</a></tt></div>
+{%-   endfor %}
+    </td>
+  </tr>
+{% endif %}
   <tr>
     <th><label for="full_name">imię/nazwisko</label></th>
     <td>
