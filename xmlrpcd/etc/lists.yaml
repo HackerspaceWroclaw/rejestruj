@@ -1,0 +1,11 @@
+public:
+  pierdoly:
+    description: Rozmowy off-topic
+    address: off-topic@example.org
+  public:
+    description: Lista publiczna
+    address: public@example.org
+members:
+  members:
+    description: Sprawy wewnętrzne HS:Wro
+    address: internal@example.org
