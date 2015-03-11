@@ -247,6 +247,26 @@ def subscribe(*args, **kwargs):
 
 @require_login
 def _subscribe():
+    subscribe = set(flask.request.values.getlist("list"))
+    session = sessions.Session(app.config)
+    maillists = mailman.MailLists(
+        app.config, email = session['email'], hsmember = session['member'],
+    )
+    # XXX: iterate through the known mail lists, not through what user has
+    # requested
+    for l in maillists.lists():
+        if l['name'] in subscribe and not l['subscribed']:
+            # user requested subscription of this list and is not already
+            # subscribed
+            # NOTE: subscriptions for members only is enforced in
+            # maillists.subscribe()
+            maillists.subscribe(l['name'])
+        elif l['name'] not in subscribe and l['subscribed']:
+            # user requested cease subscription and is subscribed
+            maillists.unsubscribe(l['name'])
+        else:
+            # otherwise subscription status is unchanged
+            pass
     return flask.redirect(flask.url_for('panel'))
 
 #-----------------------------------------------------------------------------

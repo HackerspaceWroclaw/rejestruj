@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 
 import xmlrpclib
 
@@ -47,6 +46,15 @@ class MailLists:
                     "address":     info['address'],
                     "subscribed":  info['subscribed'],
                 }
+
+    def subscribe(self, list_name):
+        if list_name in self.internal_lists and not self.is_member:
+            # ignore this request (FIXME: maybe raise an exception?)
+            return
+        self.rpc.mailman.subscribe(self.email, list_name)
+
+    def unsubscribe(self, list_name):
+        self.rpc.mailman.unsubscribe(self.email, list_name)
 
 #-----------------------------------------------------------------------------
 # vim:ft=python:foldmethod=marker
