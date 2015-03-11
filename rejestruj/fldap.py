@@ -150,6 +150,7 @@ class LDAP:
 #-----------------------------------------------------------------------------
 
 def make_str(value):
+    # TODO: if type(value) in (list, tuple), do a recursive make_str()
     if type(value) == str:
         return value
     if type(value) == unicode:

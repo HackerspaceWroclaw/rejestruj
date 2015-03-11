@@ -213,7 +213,7 @@ def _account_update():
 
     email = flask.request.values.get("email", "")
     if email != "":
-        session['email'] = account['contactMail'] = [email]
+        session['email'] = account['contactMail'] = email
 
     password = flask.request.values.get("password", "")
     password2 = flask.request.values.get("password_repeated", "")
