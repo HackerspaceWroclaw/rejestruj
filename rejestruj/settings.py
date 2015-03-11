@@ -29,6 +29,14 @@ SMTP_CREDENTIALS = None     # None | (user, password)
 
 #-----------------------------------------------------------------------------
 
+# NOTE: if your XML-RPC interface to Mailman is covered by HTTP
+# authentication, you need to encode this fact in the URL
+MAILMAN_XMLRPC_URL = None
+#MAILMAN_XMLRPC_URL = 'https://localhost:3033/'
+#MAILMAN_XMLRPC_URL = 'https://rejestruj:<password>@localhost:3033/'
+
+#-----------------------------------------------------------------------------
+
 # SQLite3
 DATABASE_FILE = 'db/rejestruj.db'
 

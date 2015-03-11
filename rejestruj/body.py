@@ -5,6 +5,7 @@ import flask
 import rejestruj.settings
 import accounts
 import sessions
+import mailman
 import fsmtp
 
 #-----------------------------------------------------------------------------
@@ -180,9 +181,12 @@ def panel(*args, **kwargs):
 
 @require_login
 def _panel():
-    # TODO: allow (un)subscribing to Mailman lists (NOTE: isHSWroMember)
     session = sessions.Session(app.config)
-    return flask.render_template('panel.html', account = session)
+    maillists = mailman.MailLists(
+        app.config, email = session['email'], hsmember = session['member'],
+    )
+    return flask.render_template('panel.html', account = session,
+                                 maillists = maillists)
 
 #-----------------------------------------------------------------------------
 
@@ -229,6 +233,20 @@ def _account_update():
     session.save()
 
     # TODO: some message maybe?
+    return flask.redirect(flask.url_for('panel'))
+
+#-----------------------------------------------------------------------------
+
+@app.route("/panel/subscribe", methods = ["GET", "POST"])
+def subscribe(*args, **kwargs):
+    if flask.request.method == "GET":
+        # stale link in browser
+        return flask.redirect(flask.url_for('panel'))
+    # flask.request.method == "POST"
+    return _subscribe(*args, **kwargs)
+
+@require_login
+def _subscribe():
     return flask.redirect(flask.url_for('panel'))
 
 #-----------------------------------------------------------------------------

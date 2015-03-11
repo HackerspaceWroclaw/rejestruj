@@ -65,13 +65,22 @@
     </td>
   </tr>
   <tr>
-    <th>subskrybuj</th>
+    <th>listy dyskusyjne</th>
     <td>
-      <ul>
-        <li>HS:Wro public</li>
-        <li>HS:Wro pierdoły</li>
-        <li>HS:Wro members (members only)</li>
-      </ul>
+      <form method="post" action="{{ url_for('subscribe') }}">
+        <div>
+{%- for l in maillists.lists() %}
+          <div>
+            <input type="checkbox" id="list-{{ l.name }}"
+              name="list" value="{{ l.name }}"{% if l.subscribed %} checked="checked"{% endif %} />
+            <label for="list-{{ l.name }}">
+              {{ l.description }} (<tt>{{ l.address }}</tt>)
+            </label>
+          </div>
+{%- endfor %}
+        </div>
+        <input type="submit" name="save" value="zapisz" />
+      </form>
     </td>
   </tr>
 </table>
