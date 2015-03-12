@@ -21,7 +21,9 @@ class Session:
                 config['SECRET_KEY'],
             )
             self.session_id = sha.sha(data).hexdigest()
-        self._content = self.db.load_session(self.session_id)
+            self._content = {}
+        else:
+            self._content = self.db.load_session(self.session_id)
 
     def cookie(self):
         return (self.session_var, self.session_id)
