@@ -233,7 +233,7 @@ class Account:
 #-----------------------------------------------------------------------------
 
 def generate_token():
-    return base64.b64encode(os.urandom(30))
+    return base64.b64encode(os.urandom(24)).replace('/', '-').replace('+', '_')
 
 #-----------------------------------------------------------------------------
 # vim:ft=python:foldmethod=marker
