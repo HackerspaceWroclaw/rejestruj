@@ -22,14 +22,30 @@ class Session:
             )
             self.session_id = sha.sha(data).hexdigest()
             self._content = {}
+            self._messages = []
         else:
-            self._content = self.db.load_session(self.session_id)
+            data = self.db.load_session(self.session_id)
+            self._content = data.get('variables', {})
+            self._messages = data.get('messages', [])
+
+    def has_messages(self):
+        return (len(self._messages) > 0)
+
+    def pop_message(self):
+        return self._messages.pop(0)
+
+    def add_message(self, message):
+        self._messages.append(message)
 
     def cookie(self):
         return (self.session_var, self.session_id)
 
     def save(self):
-        self.db.save_session(self.session_id, self._content)
+        data = {
+            'messages': self._messages,
+            'variables': self._content,
+        }
+        self.db.save_session(self.session_id, data)
 
     def delete(self):
         self.db.delete_session(self.session_id)
