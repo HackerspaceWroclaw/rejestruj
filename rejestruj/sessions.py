@@ -28,14 +28,15 @@ class Session:
             self._content = data.get('variables', {})
             self._messages = data.get('messages', [])
 
-    def has_messages(self):
-        return (len(self._messages) > 0)
+    def add_message(self, message, error = False):
+        self._messages.append({"body": message, "error": error})
 
-    def pop_message(self):
-        return self._messages.pop(0)
-
-    def add_message(self, message):
-        self._messages.append(message)
+    def pop_messages(self):
+        if len(self._messages) == 0:
+            return None
+        result = self._messages
+        self._messages = []
+        return result
 
     def cookie(self):
         return (self.session_var, self.session_id)

@@ -188,8 +188,11 @@ def _panel():
     maillists = mailman.MailLists(
         app.config, email = session['email'], hsmember = session['member'],
     )
+    messages = session.pop_messages()
+    if messages is not None:
+        session.save()
     return flask.render_template('panel.html', account = session,
-                                 maillists = maillists)
+                                 maillists = maillists, messages = messages)
 
 #-----------------------------------------------------------------------------
 
@@ -213,6 +216,7 @@ def _account_update():
     full_name = flask.request.values.get("full_name", "")
     if full_name != "":
         session['full_name'] = account['cn'] = full_name
+        session.add_message(u"Imię/nazwisko zmienione.")
 
     email = flask.request.values.get("email", "")
     if email != "":
@@ -228,7 +232,8 @@ def _account_update():
 
         smtp = fsmtp.SMTP(app.config)
         smtp.send_email(email, email_body)
-        # TODO: add a message to display
+        session.add_message(u"Wiadomość z linkiem potwierdzającym zmianę" \
+                            u" wysłana.")
 
     password = flask.request.values.get("password", "")
     password2 = flask.request.values.get("password_repeated", "")
@@ -243,6 +248,7 @@ def _account_update():
             return flask.render_template('message.html', message = message,
                                          title = title, link = link)
         account.set_password(password)
+        session.add_message(u"Hasło zmienione.")
 
     account.save()
     session.save()
@@ -282,6 +288,8 @@ def _subscribe():
         else:
             # otherwise subscription status is unchanged
             pass
+    session.add_message(u"Subskrypcje uaktualnione.")
+    session.save()
     return flask.redirect(flask.url_for('panel'))
 
 #-----------------------------------------------------------------------------
@@ -335,9 +343,18 @@ def change_email(token):
     session = sessions.Session(app.config)
     if len(session) > 0:
         session['email'] = account['contactMail'][0]
+        session.add_message(u"Adres e-mail uaktualniony.")
         session.save()
         return flask.redirect(flask.url_for('panel'))
-    return flask.redirect(flask.url_for('index'))
+    else:
+        title = u"Adres e-mail zmieniony"
+        message = u"Adres e-mail uaktualniony."
+        link = {
+            'url': flask.url_for('index'),
+            'description': u'Zaloguj',
+        }
+        return flask.render_template('message.html', message = message,
+                                     title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
