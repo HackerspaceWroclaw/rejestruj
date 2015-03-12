@@ -52,6 +52,15 @@ class DB:
                     )
                 """)
 
+            if not self.has_table("email_change"):
+                cursor.execute("""
+                    CREATE TABLE email_change (
+                        nick TEXT PRIMARY KEY,
+                        email TEXT,
+                        token TEXT
+                    )
+                """)
+
             if not self.has_table("session"):
                 cursor.execute("""
                     CREATE TABLE session (
@@ -133,6 +142,48 @@ class DB:
             cursor.execute(
                 """
                 DELETE FROM password_reset WHERE token = ?
+                """,
+                (token,)
+            )
+
+    # }}}
+    #-------------------------------------------------------
+    # e-mail change confirmations {{{
+
+    def save_email_change_token(self, token, nick, email):
+        with self.conn as cursor:
+            cursor.execute(
+                """
+                DELETE FROM email_change WHERE nick = ?
+                """,
+                (nick,)
+            )
+            cursor.execute(
+                """
+                INSERT INTO email_change (nick, email, token) VALUES (?, ?, ?)
+                """,
+                (nick, email, token)
+            )
+
+    def load_email_change_token(self, token):
+        with self.conn as cursor:
+            result = cursor.execute(
+                """
+                SELECT nick, email
+                    FROM email_change
+                    WHERE token = ?
+                """,
+                (token,)
+            ).fetchone()
+            if result is None:
+                return None
+            return result # (nick, email)
+
+    def delete_email_change_token(self, token):
+        with self.conn as cursor:
+            cursor.execute(
+                """
+                DELETE FROM email_change WHERE token = ?
                 """,
                 (token,)
             )

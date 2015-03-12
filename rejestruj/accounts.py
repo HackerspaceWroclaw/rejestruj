@@ -121,19 +121,30 @@ class NewAccount:
 #-----------------------------------------------------------------------------
 
 class Account:
-    def __init__(self, config, username = None, password = None, token = None):
+    def __init__(self, config, username = None, password = None,
+                 reset_password = None, change_email = None):
         self.config = config
         self.ldap = fldap.LDAP(self.config)
         self.db = None
-        self.token = token
+        self.reset_password_token = reset_password
+        self.change_email_token = change_email
         #self.attrs = {...}
         #self.old_attrs = {...}
         #self.dn = "..."
 
-        if self.token is not None:
+        if self.reset_password_token is not None:
             # password reset confirmation
             self.db = fdb.DB(self.config)
-            username = self.db.load_reset_password_token(self.token)
+            username = self.db.load_reset_password_token(self.reset_password_token)
+            if username is None:
+                raise InvalidTokenError()
+        elif self.change_email_token is not None:
+            # e-mail change confirmation
+            # XXX: old e-mail will be stored in self.old_attrs, while the
+            # requested (new) one will be put in self.attrs
+            self.db = fdb.DB(self.config)
+            (username, new_email) = \
+                self.db.load_email_change_token(self.change_email_token)
             if username is None:
                 raise InvalidTokenError()
 
@@ -150,6 +161,10 @@ class Account:
             raise AuthenticationError()
 
         self.old_attrs = copy.deepcopy(self.attrs)
+        if self.change_email_token is not None:
+            # make sure it will compare correctly to
+            # self.old_fields['contactMail']
+            self.attrs['contactMail'] = [fldap.make_str(new_email)]
 
     #-------------------------------------------------------
     # dict-like interface {{{
@@ -167,6 +182,9 @@ class Account:
     def field(self, key, default = None):
         return self.attrs.get(key, default)
 
+    def old_field(self, key, default = None):
+        return self.old_attrs.get(key, default)
+
     def __contains__(self, key):
         return key in self.attrs
 
@@ -175,17 +193,27 @@ class Account:
 
     # }}}
     #-------------------------------------------------------
-    # plan for interface {{{
 
     def save(self):
         changes = {}
         for a in self.attrs:
             if type(self.attrs[a]) == unicode:
+                # so it compares to str correctly
                 self.attrs[a] = fldap.make_str(self.attrs[a])
             if a not in self.old_attrs or self.attrs[a] != self.old_attrs[a]:
                 changes[a] = self.attrs[a]
         self.ldap.update(dn = self['dn'], **changes)
         # TODO: check contactMail and uid and raise RegisterError
+
+    def request_email_change(self, new_email):
+        if self.db is None:
+            self.db = fdb.DB(self.config)
+        token = generate_token()
+        self.db.save_email_change_token(token, self['uid'], new_email)
+        return token
+
+    def clear_email_change_request(self):
+        self.db.delete_email_change_token(self.change_email_token)
 
     def request_reset_password(self):
         if self.db is None:
@@ -195,12 +223,11 @@ class Account:
         return token
 
     def clear_reset_password_request(self):
-        self.db.delete_reset_password_token(self.token)
+        self.db.delete_reset_password_token(self.reset_password_token)
 
     def set_password(self, password):
         self.ldap.set_password(dn = self['dn'], password = password)
 
-    # }}}
     #-------------------------------------------------------
 
 #-----------------------------------------------------------------------------

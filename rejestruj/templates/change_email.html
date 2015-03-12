@@ -1,0 +1,33 @@
+<html>
+<head>
+<title>Zarejestruj się</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1>Zmień adres e-mail</h1>
+
+{% if message %}
+<p class="error">
+{{ message }}
+</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('change_email', token = token) }}">
+  <p>
+  Właśnie zmieniasz adres e-mail dla konta <i>{{ nick }}</i>
+  z <a href="mailto:{{ old_email }}">{{ old_email }}</a>
+  na <a href="mailto:{{ new_email }}">{{ new_email }}</a>.
+  </p>
+
+  <div>
+    <input type="checkbox" id="migrate"
+      name="migrate" value="true" checked="checked" />
+    <label for="migrate">przenieś subskrypcje na nowe konto</label>
+    <input type="submit" name="submit" value="zmień" />
+  </div>
+</form>
+
+</body>
+</html>

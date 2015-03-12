@@ -151,8 +151,8 @@ def login():
     session['dn'] = account['dn']
     session['user'] = account['uid']
     session['full_name'] = account['cn']
-    session['member'] = account.field('isHSWroMember', False)
-    session['verified'] = account.field('isVerified', False)
+    session['member'] = account.field('isHSWroMember', default = False)
+    session['verified'] = account.field('isVerified', default = False)
     session['email'] = account.field('contactMail', [None])[0]
     session['hs_emails'] = account.field('mail', [])
     session.save()
@@ -216,7 +216,19 @@ def _account_update():
 
     email = flask.request.values.get("email", "")
     if email != "":
-        session['email'] = account['contactMail'] = email
+        token = account.request_email_change(email)
+        url = flask.url_for('change_email', token = token, _external = True)
+        values = {
+            'confirmation_link': url,
+            'nick': account['uid'],
+            'email_from': app.config['EMAIL_FROM'],
+            'email_to': email,
+        }
+        email_body = flask.render_template('email_change.txt', **values)
+
+        smtp = fsmtp.SMTP(app.config)
+        smtp.send_email(email, email_body)
+        # TODO: add a message to display
 
     password = flask.request.values.get("password", "")
     password2 = flask.request.values.get("password_repeated", "")
@@ -274,10 +286,65 @@ def _subscribe():
 
 #-----------------------------------------------------------------------------
 
+@app.route("/update_email/<path:token>", methods = ["GET", "POST"])
+def change_email(token):
+    try:
+        account = accounts.Account(app.config, change_email = token)
+    except accounts.InvalidTokenError:
+        title = u"Resetowanie hasła nieudane"
+        message = u"Nieprawidłowy link do resetowania hasła."
+        return flask.render_template('message.html', message = message,
+                                     title = title)
+    except accounts.NoSuchUserError:
+        title = u"Resetowanie hasła nieudane"
+        message = u"Użytkownik nie istnieje."
+        return flask.render_template('message.html', message = message,
+                                     title = title)
+
+    nick = account['uid']
+    old_email = account.old_field('contactMail')[0]
+    new_email = account['contactMail'][0]
+
+    if flask.request.method == "GET":
+        return flask.render_template('change_email.html', token = token,
+                                     nick = nick, new_email = new_email,
+                                     old_email = old_email)
+
+    # flask.request.method == "POST"
+
+    # `account' is already prepared to update contactMail field
+    account.save()
+    account.clear_email_change_request()
+
+    if flask.request.values.get("migrate") == "true":
+        # XXX: lie about membership, because subscription requests for
+        # non-members are silently ignored
+        # FIXME: make it so mailman.MailLists doesn't need to know about
+        # HS:Wro membership
+        old_lists = mailman.MailLists(app.config, email = old_email)
+        new_lists = mailman.MailLists(
+            app.config, email = new_email, hsmember = True,
+        )
+        for ol in old_lists.lists():
+            if ol['subscribed']:
+                old_lists.unsubscribe(ol['name'])
+                # if new e-mail was already subscribed to this list, this will
+                # be a little excessive, but it doesn't matter
+                new_lists.subscribe(ol['name'])
+
+    session = sessions.Session(app.config)
+    if len(session) > 0:
+        session['email'] = account['contactMail'][0]
+        session.save()
+        return flask.redirect(flask.url_for('panel'))
+    return flask.redirect(flask.url_for('index'))
+
+#-----------------------------------------------------------------------------
+
 @app.route("/reset_password/<path:token>", methods = ["GET", "POST"])
 def reset_password(token):
     try:
-        account = accounts.Account(app.config, token = token)
+        account = accounts.Account(app.config, reset_password = token)
     except accounts.InvalidTokenError:
         title = u"Resetowanie hasła nieudane"
         message = u"Nieprawidłowy link do resetowania hasła."
