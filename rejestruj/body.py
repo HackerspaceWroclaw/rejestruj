@@ -31,6 +31,9 @@ def require_login(view):
 
 @app.route("/")
 def index():
+    session = sessions.Session(app.config)
+    if len(session) > 0:
+        return flask.redirect(flask.url_for('panel'))
     return flask.render_template('index.html')
 
 #-----------------------------------------------------------------------------
