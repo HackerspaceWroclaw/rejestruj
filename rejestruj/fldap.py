@@ -123,6 +123,12 @@ class LDAP:
         operations = [
             (ldap.MOD_REPLACE, name, [make_str(attrs[name])])
             for name in attrs
+            if type(attrs[name]) in (str, unicode)
+        ]
+        operations += [
+            (ldap.MOD_REPLACE, name, [make_str(v) for v in attrs[name]])
+            for name in attrs
+            if type(attrs[name]) in (list, tuple)
         ]
         self.conn.modify_s(dn, operations)
 
@@ -150,7 +156,6 @@ class LDAP:
 #-----------------------------------------------------------------------------
 
 def make_str(value):
-    # TODO: if type(value) in (list, tuple), do a recursive make_str()
     if type(value) == str:
         return value
     if type(value) == unicode:
