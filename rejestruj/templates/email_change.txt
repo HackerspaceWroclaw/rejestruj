@@ -1,16 +1,9 @@
-From: Rejestrator Hackerspace Wroclaw <{{ email_from }}>
-To: {{ email_to }}
-Subject: zmiana adresu e-mail w Hackerspace Wroclaw
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-
+{% extends "base/email.txt" -%}
+{% block body -%}
 Żeby zmienić adres e-mail stowarzyszony z kontem "{{ nick }}"
 w Hackerspace Wrocław otwórz w przeglądarce ten link:
 
     {{ confirmation_link }}
 
 Jeśli zmiana adresu e-mail nie jest Twoją intencją, zignoruj tę wiadomość.
-
--- 
-Rejestrator Hackerspace Wrocław
+{%- endblock %}
