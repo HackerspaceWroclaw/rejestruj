@@ -1,13 +1,5 @@
-<html>
-<head>
-<title>Zarejestruj się</title>
-<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-
-<h1>{{ title }}</h1>
-
+{% extends "base/template.html" %}
+{% block body %}
 <p{% if error %} class="error"{% endif %}>
 {{ message }}
 </p>
@@ -15,8 +7,6 @@
 {% if link %}
 <p>
 <a href="{{ link.url }}">{{ link.description }}</a>
-</p
+</p>
 {% endif %}
-
-</body>
-</html>
+{% endblock %}
