@@ -117,7 +117,7 @@ def login():
                       u" Czy chcesz się zarejestrować?"
             link = {
                 'url': flask.url_for('index'),
-                'description': u'Powrót do logowania',
+                'description': u'Powrót do strony głównej',
             }
             return flask.render_template('message.html', message = message,
                                          title = title, link = link)
@@ -138,10 +138,10 @@ def login():
         message = u"E-mail dla resetowania hasła został wysłany."
         link = {
             'url': flask.url_for('index'),
-            'description': u'Powrót do logowania',
+            'description': u'Powrót do strony głównej',
         }
         return flask.render_template('message.html', message = message,
-                                     title = title)
+                                     title = title, link = link)
 
     try:
         username = flask.request.values['nick']
