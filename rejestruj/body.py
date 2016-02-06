@@ -109,8 +109,18 @@ def confirm(token):
 @app.route("/login", methods = ["POST"])
 def login():
     if 'reset_password' in flask.request.values:
-        # TODO: catch NoSuchUserException
-        account = accounts.Account(app.config, flask.request.values['nick'])
+        try:
+            account = accounts.Account(app.config, flask.request.values['nick'])
+        except accounts.NoSuchUserError:
+            title = u"Resetowanie hasła"
+            message = u"Nie ma takiego użytkownika." \
+                      u" Czy chcesz się zarejestrować?"
+            link = {
+                'url': flask.url_for('index'),
+                'description': u'Powrót do logowania',
+            }
+            return flask.render_template('message.html', message = message,
+                                         title = title, link = link)
         token = account.request_reset_password()
         url = flask.url_for('reset_password', token = token, _external = True)
         values = {
