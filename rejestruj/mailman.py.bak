@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import xmlrpc.client
+import xmlrpclib
 
 #-----------------------------------------------------------------------------
 
@@ -10,7 +10,7 @@ class MailLists:
         self.email = email
         self.is_member = hsmember
         self.url = config['MAILMAN_XMLRPC_URL']
-        self.rpc = xmlrpc.client.Server(self.url)
+        self.rpc = xmlrpclib.Server(self.url)
 
         result = self.rpc.mailman.membership(self.email)
         self.internal_lists = result['internal']
@@ -29,14 +29,14 @@ class MailLists:
         #   ...
 
     def lists(self):
-        for (name, info) in self.public_lists.items():
+        for (name, info) in self.public_lists.iteritems():
             yield {
                 "name": name,
                 "description": info['description'],
                 "address":     info['address'],
                 "subscribed":  info['subscribed'],
             }
-        for (name, info) in self.internal_lists.items():
+        for (name, info) in self.internal_lists.iteritems():
             # skip if not a HS member and not subscribed to the list (to allow
             # unsubscribing from an internal list, but not subscribing back)
             if self.is_member or info['subscribed']:

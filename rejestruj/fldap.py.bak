@@ -52,10 +52,10 @@ class LDAP:
     def add_user(self, **values):
         dn = self.config['LDAP_USER_DN_TEMPLATE'] % values
         attrs = {}
-        for name, value in self.config['LDAP_USER_TEMPLATE'].items():
+        for name, value in self.config['LDAP_USER_TEMPLATE'].iteritems():
             if type(value) in (list, tuple):
                 attrs[name] = [v % values for v in value]
-            elif type(value) in (str, str):
+            elif type(value) in (str, unicode):
                 attrs[name] = value % values
             else:
                 attrs[name] = value
@@ -64,10 +64,10 @@ class LDAP:
 
     def add(self, dn, attrs):
         ldap_attrs = []
-        for (name, value) in attrs.items():
+        for (name, value) in attrs.iteritems():
             if type(value) in (list, tuple):
                 ldap_attrs.append((name, [make_str(v) for v in value]))
-            elif type(value) in (str, str):
+            elif type(value) in (str, unicode):
                 ldap_attrs.append((name, [make_str(value)]))
             elif type(value) == bool:
                 ldap_attrs.append((name, ["TRUE" if value else "FALSE"]))
@@ -123,7 +123,7 @@ class LDAP:
         operations = [
             (ldap.MOD_REPLACE, name, [make_str(attrs[name])])
             for name in attrs
-            if type(attrs[name]) in (str, str)
+            if type(attrs[name]) in (str, unicode)
         ]
         operations += [
             (ldap.MOD_REPLACE, name, [make_str(v) for v in attrs[name]])
@@ -158,7 +158,7 @@ class LDAP:
 def make_str(value):
     if type(value) == str:
         return value
-    if type(value) == str:
+    if type(value) == unicode:
         return value.encode('utf-8')
 
 #-----------------------------------------------------------------------------
@@ -170,7 +170,7 @@ def passwd(password):
                  "0123456789./"
     salt = "$1$%s$" % "".join([
         salt_space[random.randrange(0, 64)]
-        for i in range(16)
+        for i in xrange(16)
     ])
     return "{CRYPT}%s" % (crypt.crypt(password, salt),)
 

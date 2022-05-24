@@ -3,10 +3,10 @@
 
 import flask
 import rejestruj.settings
-from . import accounts
-from . import sessions
-from . import mailman
-from . import fsmtp
+import accounts
+import sessions
+import mailman
+import fsmtp
 
 #-----------------------------------------------------------------------------
 
@@ -45,8 +45,8 @@ def register():
 
     if password == "" or password != password2:
         errors = {
-                "password": "hasła się nie zgadzają",
-                }
+            "password": u"hasła się nie zgadzają",
+        }
         return flask.render_template('register.html', errors = errors)
 
     try:
@@ -57,25 +57,25 @@ def register():
         account.lastname  = flask.request.values['lastname']
         account.password  = password
         activation_token = account.store_for_activation()
-    except accounts.RegisterError as e:
+    except accounts.RegisterError, e:
         return flask.render_template('register.html', errors = e.errors)
 
     url = flask.url_for('confirm', token = activation_token, _external = True)
     values = {
-            'activation_link': url,
-            'nick': account.nick,
-            'email_from': app.config['EMAIL_FROM'],
-            'email_to': account.email,
-            }
+        'activation_link': url,
+        'nick': account.nick,
+        'email_from': app.config['EMAIL_FROM'],
+        'email_to': account.email,
+    }
     email_body = flask.render_template('email_confirm.txt', **values)
 
     smtp = fsmtp.SMTP(app.config)
     smtp.send_email(account.email, email_body)
 
-    title = "Zarejestrowano"
-    message = "E-mail aktywacyjny został wysłany."
+    title = u"Zarejestrowano"
+    message = u"E-mail aktywacyjny został wysłany."
     return flask.render_template('message.html', message = message,
-            title = title)
+                                 title = title)
 
 #-----------------------------------------------------------------------------
 
@@ -85,24 +85,24 @@ def confirm(token):
         account = accounts.NewAccount(app.config, token = token)
         account.register()
     except accounts.InvalidTokenError:
-        title = "Rejestracja nieudana"
-        message = "Nieprawidłowy link aktywacyjny."
+        title = u"Rejestracja nieudana"
+        message = u"Nieprawidłowy link aktywacyjny."
         return flask.render_template('message.html', message = message,
-                title = title, error = True)
+                                     title = title, error = True)
     except accounts.UserExistsError:
-        title = "Rejestracja nieudana"
-        message = "Użytkownik %s już istnieje" % (account.nick,)
+        title = u"Rejestracja nieudana"
+        message = u"Użytkownik %s już istnieje" % (account.nick,)
         return flask.render_template('message.html', message = message,
-                title = title, error = True)
+                                     title = title, error = True)
 
-    title = "Zarejestrowano"
-    message = "Użytkownik utworzony."
+    title = u"Zarejestrowano"
+    message = u"Użytkownik utworzony."
     link = {
-            'url': flask.url_for('index'),
-            'description': 'Zaloguj',
-            }
+        'url': flask.url_for('index'),
+        'description': u'Zaloguj',
+    }
     return flask.render_template('message.html', message = message,
-            title = title, link = link)
+                                 title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
@@ -112,50 +112,50 @@ def login():
         try:
             account = accounts.Account(app.config, flask.request.values['nick'])
         except accounts.NoSuchUserError:
-            title = "Resetowanie hasła"
-            message = "Nie ma takiego użytkownika." \
-                    " Czy chcesz się zarejestrować?"
+            title = u"Resetowanie hasła"
+            message = u"Nie ma takiego użytkownika." \
+                      u" Czy chcesz się zarejestrować?"
             link = {
-                    'url': flask.url_for('index'),
-                    'description': 'Powrót do strony głównej',
-                    }
+                'url': flask.url_for('index'),
+                'description': u'Powrót do strony głównej',
+            }
             return flask.render_template('message.html', message = message,
-                    title = title, link = link)
+                                         title = title, link = link)
         token = account.request_reset_password()
         url = flask.url_for('reset_password', token = token, _external = True)
         values = {
-                'reset_password_link': url,
-                'nick': account['uid'],
-                'email_from': app.config['EMAIL_FROM'],
-                'email_to': account['contactMail'][0],
-                }
+            'reset_password_link': url,
+            'nick': account['uid'],
+            'email_from': app.config['EMAIL_FROM'],
+            'email_to': account['contactMail'][0],
+        }
         email_body = flask.render_template('email_reset_password.txt', **values)
 
         smtp = fsmtp.SMTP(app.config)
         smtp.send_email(account['contactMail'][0], email_body)
 
-        title = "Resetowanie hasła"
-        message = "E-mail dla resetowania hasła został wysłany."
+        title = u"Resetowanie hasła"
+        message = u"E-mail dla resetowania hasła został wysłany."
         link = {
-                'url': flask.url_for('index'),
-                'description': 'Powrót do strony głównej',
-                }
+            'url': flask.url_for('index'),
+            'description': u'Powrót do strony głównej',
+        }
         return flask.render_template('message.html', message = message,
-                title = title, link = link)
+                                     title = title, link = link)
 
     try:
         username = flask.request.values['nick']
         password = flask.request.values.get('password')
         account = accounts.Account(app.config, username, password)
     except accounts.AuthenticationError:
-        title = "Błąd logowania"
-        message = "Nieprawidłowy login lub błędne hasło."
+        title = u"Błąd logowania"
+        message = u"Nieprawidłowy login lub błędne hasło."
         link = {
-                'url': flask.url_for('index'),
-                'description': 'Powrót',
-                }
+            'url': flask.url_for('index'),
+            'description': u'Powrót',
+        }
         return flask.render_template('message.html', message = message,
-                title = title, link = link)
+                                     title = title, link = link)
 
     session = sessions.Session(app.config)
     session['dn'] = account['dn']
@@ -180,11 +180,11 @@ def logout():
     message = 'Wylogowano.'
     title = 'Wylogowano'
     link = {
-            'url': flask.url_for('index'),
-            'description': 'Zaloguj ponownie',
-            }
+        'url': flask.url_for('index'),
+        'description': u'Zaloguj ponownie',
+    }
     return flask.render_template('message.html', message = message,
-            title = title, link = link)
+                                 title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
@@ -196,13 +196,13 @@ def panel(*args, **kwargs):
 def _panel():
     session = sessions.Session(app.config)
     maillists = mailman.MailLists(
-            app.config, email = session['email'], hsmember = session['member'],
-            )
+        app.config, email = session['email'], hsmember = session['member'],
+    )
     messages = session.pop_messages()
     if messages is not None:
         session.save()
     return flask.render_template('panel.html', account = session,
-            maillists = maillists, messages = messages)
+                                 maillists = maillists, messages = messages)
 
 #-----------------------------------------------------------------------------
 
@@ -226,39 +226,39 @@ def _account_update():
     full_name = flask.request.values.get("full_name", "")
     if full_name != "":
         session['full_name'] = account['cn'] = full_name
-        session.add_message("Imię/nazwisko zmienione.")
+        session.add_message(u"Imię/nazwisko zmienione.")
 
     email = flask.request.values.get("email", "")
     if email != "":
         token = account.request_email_change(email)
         url = flask.url_for('change_email', token = token, _external = True)
         values = {
-                'confirmation_link': url,
-                'nick': account['uid'],
-                'email_from': app.config['EMAIL_FROM'],
-                'email_to': email,
-                }
+            'confirmation_link': url,
+            'nick': account['uid'],
+            'email_from': app.config['EMAIL_FROM'],
+            'email_to': email,
+        }
         email_body = flask.render_template('email_change.txt', **values)
 
         smtp = fsmtp.SMTP(app.config)
         smtp.send_email(email, email_body)
-        session.add_message("Wiadomość z linkiem potwierdzającym zmianę" \
-                " wysłana.")
+        session.add_message(u"Wiadomość z linkiem potwierdzającym zmianę" \
+                            u" wysłana.")
 
     password = flask.request.values.get("password", "")
     password2 = flask.request.values.get("password_repeated", "")
     if password != "" or password2 != "":
         if password != password2:
-            message = 'Hasła się nie zgadzają.'
-            title = 'Błąd ustawiania hasła'
+            message = u'Hasła się nie zgadzają.'
+            title = u'Błąd ustawiania hasła'
             link = {
-                    'url': flask.url_for('panel'),
-                    'description': 'Powrót',
-                    }
+                'url': flask.url_for('panel'),
+                'description': u'Powrót',
+            }
             return flask.render_template('message.html', message = message,
-                    title = title, link = link)
+                                         title = title, link = link)
         account.set_password(password)
-        session.add_message("Hasło zmienione.")
+        session.add_message(u"Hasło zmienione.")
 
     account.save()
     session.save()
@@ -281,8 +281,8 @@ def _subscribe():
     subscribe = set(flask.request.values.getlist("list"))
     session = sessions.Session(app.config)
     maillists = mailman.MailLists(
-            app.config, email = session['email'], hsmember = session['member'],
-            )
+        app.config, email = session['email'], hsmember = session['member'],
+    )
     # XXX: iterate through the known mail lists, not through what user has
     # requested
     for l in maillists.lists():
@@ -298,7 +298,7 @@ def _subscribe():
         else:
             # otherwise subscription status is unchanged
             pass
-    session.add_message("Subskrypcje uaktualnione.")
+    session.add_message(u"Subskrypcje uaktualnione.")
     session.save()
     return flask.redirect(flask.url_for('panel'))
 
@@ -309,15 +309,15 @@ def change_email(token):
     try:
         account = accounts.Account(app.config, change_email = token)
     except accounts.InvalidTokenError:
-        title = "Resetowanie hasła nieudane"
-        message = "Nieprawidłowy link do resetowania hasła."
+        title = u"Resetowanie hasła nieudane"
+        message = u"Nieprawidłowy link do resetowania hasła."
         return flask.render_template('message.html', message = message,
-                title = title)
+                                     title = title)
     except accounts.NoSuchUserError:
-        title = "Resetowanie hasła nieudane"
-        message = "Użytkownik nie istnieje."
+        title = u"Resetowanie hasła nieudane"
+        message = u"Użytkownik nie istnieje."
         return flask.render_template('message.html', message = message,
-                title = title)
+                                     title = title)
 
     nick = account['uid']
     old_email = account.old_field('contactMail')[0]
@@ -325,8 +325,8 @@ def change_email(token):
 
     if flask.request.method == "GET":
         return flask.render_template('change_email.html', token = token,
-                nick = nick, new_email = new_email,
-                old_email = old_email)
+                                     nick = nick, new_email = new_email,
+                                     old_email = old_email)
 
     # flask.request.method == "POST"
 
@@ -341,8 +341,8 @@ def change_email(token):
         # HS:Wro membership
         old_lists = mailman.MailLists(app.config, email = old_email)
         new_lists = mailman.MailLists(
-                app.config, email = new_email, hsmember = True,
-                )
+            app.config, email = new_email, hsmember = True,
+        )
         for ol in old_lists.lists():
             if ol['subscribed']:
                 old_lists.unsubscribe(ol['name'])
@@ -353,18 +353,18 @@ def change_email(token):
     session = sessions.Session(app.config)
     if len(session) > 0:
         session['email'] = account['contactMail'][0]
-        session.add_message("Adres e-mail uaktualniony.")
+        session.add_message(u"Adres e-mail uaktualniony.")
         session.save()
         return flask.redirect(flask.url_for('panel'))
     else:
-        title = "Adres e-mail zmieniony"
-        message = "Adres e-mail uaktualniony."
+        title = u"Adres e-mail zmieniony"
+        message = u"Adres e-mail uaktualniony."
         link = {
-                'url': flask.url_for('index'),
-                'description': 'Zaloguj',
-                }
+            'url': flask.url_for('index'),
+            'description': u'Zaloguj',
+        }
         return flask.render_template('message.html', message = message,
-                title = title, link = link)
+                                     title = title, link = link)
 
 #-----------------------------------------------------------------------------
 
@@ -373,40 +373,40 @@ def reset_password(token):
     try:
         account = accounts.Account(app.config, reset_password = token)
     except accounts.InvalidTokenError:
-        title = "Resetowanie hasła nieudane"
-        message = "Nieprawidłowy link do resetowania hasła."
+        title = u"Resetowanie hasła nieudane"
+        message = u"Nieprawidłowy link do resetowania hasła."
         return flask.render_template('message.html', message = message,
-                title = title)
+                                     title = title)
     except accounts.NoSuchUserError:
-        title = "Resetowanie hasła nieudane"
-        message = "Użytkownik nie istnieje."
+        title = u"Resetowanie hasła nieudane"
+        message = u"Użytkownik nie istnieje."
         return flask.render_template('message.html', message = message,
-                title = title)
+                                     title = title)
 
     password = flask.request.values.get("password", "")
     password2 = flask.request.values.get("password_repeated", "")
     if flask.request.method == "POST" and (password != "" or password2 != ""):
         if password != password2:
-            message = "Hasła się nie zgadzają"
+            message = u"Hasła się nie zgadzają"
             return flask.render_template('reset_password.html',
-                    nick = account['uid'], token = token,
-                    message = message)
+                                         nick = account['uid'], token = token,
+                                         message = message)
 
         account.set_password(password)
         account.save()
         account.clear_reset_password_request()
 
-        title = "Resetowanie hasła udane"
-        message = "Hasło zresetowane."
+        title = u"Resetowanie hasła udane"
+        message = u"Hasło zresetowane."
         link = {
-                'url': flask.url_for('index'),
-                'description': 'Zaloguj',
-                }
+            'url': flask.url_for('index'),
+            'description': u'Zaloguj',
+        }
         return flask.render_template('message.html', message = message,
-                title = title, link = link)
+                                     title = title, link = link)
 
     return flask.render_template('reset_password.html', nick = account['uid'],
-            token = token)
+                                 token = token)
 
 #-----------------------------------------------------------------------------
 # vim:ft=python:foldmethod=marker

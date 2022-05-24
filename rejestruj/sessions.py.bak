@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
-from . import fdb
+import fdb
 import flask
 import time
-import hashlib
+import sha
 
 #-----------------------------------------------------------------------------
 
@@ -15,12 +15,12 @@ class Session:
         if self.session_id is None:
             # data to calculate session ID
             data = "%s -> %s @%.6f <%s>" % (
-                    flask.request.remote_addr,
-                    flask.request.host_url,
-                    time.time(),
-                    config['SECRET_KEY'],
-                    )
-            self.session_id = hashlib.sha1(data.encode('utf-8')).hexdigest()
+                flask.request.remote_addr,
+                flask.request.host_url,
+                time.time(),
+                config['SECRET_KEY'],
+            )
+            self.session_id = sha.sha(data).hexdigest()
             self._content = {}
             self._messages = []
         else:
@@ -43,9 +43,9 @@ class Session:
 
     def save(self):
         data = {
-                'messages': self._messages,
-                'variables': self._content,
-                }
+            'messages': self._messages,
+            'variables': self._content,
+        }
         self.db.save_session(self.session_id, data)
 
     def delete(self):

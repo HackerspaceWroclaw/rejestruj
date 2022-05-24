@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from . import fdb
-from . import fldap
+import fdb
+import fldap
 
 import os
 import base64
@@ -100,23 +100,23 @@ class NewAccount:
         # FIXME: tight coupling with registration form
         errors = {}
         if self.nick in (None, ""):
-            errors["nick"] = "nick jest pusty"
+            errors["nick"] = u"nick jest pusty"
         elif not _NICK_RE.match(self.nick):
-            errors["nick"] = "niedozwolone znaki w nicku"
+            errors["nick"] = u"niedozwolone znaki w nicku"
 
         if self.email in (None, ""):
-            errors["email"] = "e-mail jest pusty"
+            errors["email"] = u"e-mail jest pusty"
         elif not _EMAIL_RE.match(self.email):
-            errors["email"] = "e-mail ma nieprawidłową formę"
+            errors["email"] = u"e-mail ma nieprawidłową formę"
 
         if self.firstname in (None, ""):
-            errors["firstname"] = "imię jest puste"
+            errors["firstname"] = u"imię jest puste"
 
         if self.lastname in (None, ""):
-            errors["lastname"] = "nazwisko jest puste"
+            errors["lastname"] = u"nazwisko jest puste"
 
         if len(errors) > 0:
-            raise RegisterError("błędy w formularzu", errors)
+            raise RegisterError(u"błędy w formularzu", errors)
 
 #-----------------------------------------------------------------------------
 
@@ -197,7 +197,7 @@ class Account:
     def save(self):
         changes = {}
         for a in self.attrs:
-            if type(self.attrs[a]) == str:
+            if type(self.attrs[a]) == unicode:
                 # so it compares to str correctly
                 self.attrs[a] = fldap.make_str(self.attrs[a])
             if a not in self.old_attrs or self.attrs[a] != self.old_attrs[a]:
